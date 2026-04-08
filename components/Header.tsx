@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 function LiveDate() {
   const [date, setDate] = useState("");
   useEffect(() => {
-    setDate(new Date().toLocaleDateString("es-SV", { day: "2-digit", month: "short", year: "numeric" }));
+    setDate(new Date().toLocaleDateString("es-SV", { day: "2-digit", month: "short", year: "numeric", timeZone: "America/El_Salvador" }));
   }, []);
   return (
     <div className="text-xs px-2 py-1 rounded font-mono hidden sm:block" style={{ backgroundColor: "#1e3a5f", color: "#93c5fd" }}>

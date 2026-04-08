@@ -182,7 +182,7 @@ export default async function Home({ searchParams }: PageProps) {
       let hora = "";
       if (ts && typeof ts === "object" && "toDate" in ts) {
         const d = (ts as { toDate: () => Date }).toDate();
-        hora = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+        hora = d.toLocaleTimeString("es-SV", { hour: "2-digit", minute: "2-digit", timeZone: "America/El_Salvador" });
       }
       return {
         hora,

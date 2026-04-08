@@ -44,7 +44,7 @@ export default async function VelocidadPage({ searchParams }: PageProps) {
     let hora = "";
     if (r.timestamp && typeof r.timestamp === "object" && "toDate" in r.timestamp) {
       const d = (r.timestamp as { toDate: () => Date }).toDate();
-      hora = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+      hora = d.toLocaleTimeString("es-SV", { hour: "2-digit", minute: "2-digit", timeZone: "America/El_Salvador" });
     }
     return {
       hora,
@@ -191,6 +191,7 @@ export default async function VelocidadPage({ searchParams }: PageProps) {
                       year: "numeric",
                       hour: "2-digit",
                       minute: "2-digit",
+                      timeZone: "America/El_Salvador",
                     });
                   }
                   const dev = deviceList.find((d) => d.cpuId === r.cpu_id);
