@@ -32,10 +32,10 @@ export function Header() {
 
       <div className="flex flex-col min-w-0">
         <span className="text-white font-bold text-sm leading-tight tracking-wide uppercase truncate">
-          Ministerio de Educación
+          ECOS
         </span>
         <span className="text-blue-400 text-xs leading-tight truncate">
-          Sistema de Monitoreo de Red · El Salvador
+          Ministerio de Educación · El Salvador
         </span>
       </div>
 

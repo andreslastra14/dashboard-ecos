@@ -3,23 +3,23 @@
 import {
   TrendingDown,
   TrendingUp,
-  Clock,
   AlertTriangle,
   Globe,
-  BarChart3,
   ShieldOff,
+  BatteryWarning,
+  Zap,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
-interface InsightsData {
+export interface InsightsData {
   filtroBypassCount: number;
   filtroTotalCount: number;
-  peorSonda: { serie: string; dispositivo: string; uptime: number } | null;
-  mejorSonda: { serie: string; dispositivo: string; uptime: number } | null;
-  horasPico: string;
-  sondasEnRiesgo: number;
-  promedioFallasPorDia: number;
   minedInaccesible: number;
+  minedTotalCount: number;
+  sondasEnRiesgo: number;
+  upsProblemas: number;
+  peorDispositivo: { cpuId: string; nombre: string; uptime: number } | null;
+  mejorDispositivo: { cpuId: string; nombre: string; uptime: number } | null;
 }
 
 interface InsightItem {
@@ -27,14 +27,12 @@ interface InsightItem {
   label: string;
   value: string;
   detail: string;
-  color: string; // Same corporate palette as KpiCard
+  color: string;
 }
 
-// Corporate palette — identical to KPI cards
 const BLUE_PRIMARY = "#1e3a5f";
 const BLUE_SECONDARY = "#2e6da4";
 const BLUE_TERTIARY = "#3b82a0";
-const BLUE_QUATERNARY = "#4a7c8e";
 const GREEN_OK = "#1e5f4a";
 const RED_CRITICAL = "#b91c1c";
 
@@ -42,7 +40,7 @@ export function InsightsPanel({ data }: { data: InsightsData }) {
   const items: InsightItem[] = [
     {
       icon: ShieldOff,
-      label: "Filtro de Contenido",
+      label: "Filtro Contenido",
       value: data.filtroBypassCount > 0 ? `${data.filtroBypassCount} sin filtro` : "Protegidos",
       detail: `${data.filtroTotalCount - data.filtroBypassCount}/${data.filtroTotalCount} con filtro activo`,
       color: data.filtroBypassCount > 0 ? RED_CRITICAL : GREEN_OK,
@@ -51,42 +49,42 @@ export function InsightsPanel({ data }: { data: InsightsData }) {
       icon: Globe,
       label: "Portal MINED",
       value: data.minedInaccesible > 0 ? `${data.minedInaccesible} sin acceso` : "Conectados",
-      detail: "Conectividad al portal educativo",
+      detail: `${data.minedTotalCount - data.minedInaccesible}/${data.minedTotalCount} con acceso`,
       color: data.minedInaccesible > 0 ? BLUE_SECONDARY : GREEN_OK,
     },
     {
       icon: AlertTriangle,
       label: "Sondas en Riesgo",
       value: `${data.sondasEnRiesgo}`,
-      detail: "Lat. >150ms o desc. <5Mbps",
+      detail: "Desc. <5Mbps o desconectadas",
       color: data.sondasEnRiesgo > 0 ? BLUE_SECONDARY : GREEN_OK,
     },
     {
-      icon: Clock,
-      label: "Hora Pico Fallas",
-      value: data.horasPico,
-      detail: "Mayor concentración de fallas",
-      color: BLUE_TERTIARY,
+      icon: BatteryWarning,
+      label: "UPS con Problemas",
+      value: `${data.upsProblemas}`,
+      detail: "Estado anormal de UPS",
+      color: data.upsProblemas > 0 ? RED_CRITICAL : GREEN_OK,
     },
     {
-      icon: BarChart3,
-      label: "Fallas/Día",
-      value: String(data.promedioFallasPorDia),
-      detail: "Promedio diario de fallas",
-      color: data.promedioFallasPorDia > 10 ? RED_CRITICAL : BLUE_QUATERNARY,
+      icon: Zap,
+      label: "Filtro Bypass",
+      value: data.filtroBypassCount > 0 ? `${data.filtroBypassCount}` : "0",
+      detail: "Adultos accesible (filtro falla)",
+      color: data.filtroBypassCount > 0 ? RED_CRITICAL : GREEN_OK,
     },
     {
       icon: TrendingDown,
-      label: "Peor Sonda",
-      value: data.peorSonda ? `${data.peorSonda.uptime}%` : "—",
-      detail: data.peorSonda?.dispositivo ?? "Sin datos",
-      color: (data.peorSonda?.uptime ?? 100) < 90 ? RED_CRITICAL : BLUE_PRIMARY,
+      label: "Peor Dispositivo",
+      value: data.peorDispositivo ? `${data.peorDispositivo.uptime}%` : "--",
+      detail: data.peorDispositivo?.nombre ?? "Sin datos",
+      color: (data.peorDispositivo?.uptime ?? 100) < 90 ? RED_CRITICAL : BLUE_PRIMARY,
     },
     {
       icon: TrendingUp,
-      label: "Mejor Sonda",
-      value: data.mejorSonda ? `${data.mejorSonda.uptime}%` : "—",
-      detail: data.mejorSonda?.dispositivo ?? "Sin datos",
+      label: "Mejor Dispositivo",
+      value: data.mejorDispositivo ? `${data.mejorDispositivo.uptime}%` : "--",
+      detail: data.mejorDispositivo?.nombre ?? "Sin datos",
       color: GREEN_OK,
     },
   ];
@@ -98,7 +96,6 @@ export function InsightsPanel({ data }: { data: InsightsData }) {
           key={label}
           className="relative bg-white rounded-xl border border-slate-200 shadow-sm p-4 overflow-hidden flex flex-col gap-3"
         >
-          {/* Subtle background accent — same as KpiCard */}
           <div
             className="absolute top-0 right-0 w-20 h-20 rounded-full opacity-[0.04] -translate-y-6 translate-x-6"
             style={{ backgroundColor: color }}
@@ -120,7 +117,6 @@ export function InsightsPanel({ data }: { data: InsightsData }) {
 
           <p className="text-xs text-slate-400">{detail}</p>
 
-          {/* Bottom accent bar — same as KpiCard */}
           <div
             className="absolute bottom-0 left-0 right-0 h-[3px] rounded-b-xl"
             style={{ backgroundColor: color, opacity: 0.6 }}

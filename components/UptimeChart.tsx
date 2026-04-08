@@ -1,8 +1,8 @@
 "use client";
 
-interface UptimeData {
-  serie: string;
-  dispositivo: string;
+export interface UptimeData {
+  cpuId: string;
+  nombre: string;
   uptime: number;
 }
 
@@ -65,13 +65,13 @@ export function UptimeChart({ data }: { data: UptimeData[] }) {
         const color = getColor(item.uptime);
         return (
           <div
-            key={item.serie}
+            key={item.cpuId}
             className="relative bg-white rounded-xl border border-slate-200 shadow-sm p-3 flex items-center gap-3 overflow-hidden"
           >
             <UptimeRing value={item.uptime} color={color} />
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-semibold text-slate-700 truncate">{item.dispositivo}</p>
-              <p className="text-[10px] text-slate-400 font-mono truncate">{item.serie}</p>
+              <p className="text-xs font-semibold text-slate-700 truncate">{item.nombre}</p>
+              <p className="text-[10px] text-slate-400 font-mono truncate">{item.cpuId}</p>
             </div>
             <div
               className="absolute bottom-0 left-0 right-0 h-[2px]"

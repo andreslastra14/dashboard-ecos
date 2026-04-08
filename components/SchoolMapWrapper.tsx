@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import type { MapMarker } from "@/components/SchoolMap";
 
 const SchoolMap = dynamic(
   () => import("@/components/SchoolMap").then((m) => m.SchoolMap),
@@ -17,25 +18,14 @@ const SchoolMap = dynamic(
   }
 );
 
-interface Sonda {
-  serie: string;
-  lat: number;
-  lng: number;
-  status: string;
-  download_mbps: number;
-  upload_mbps: number;
-  fecha: string;
-  latencia_mined: number;
-}
-
 export function SchoolMapWrapper({
-  sondas,
+  markers,
   center,
   zoom,
 }: {
-  sondas: Sonda[];
+  markers: MapMarker[];
   center?: [number, number];
   zoom?: number;
 }) {
-  return <SchoolMap sondas={sondas} center={center} zoom={zoom} />;
+  return <SchoolMap markers={markers} center={center} zoom={zoom} />;
 }

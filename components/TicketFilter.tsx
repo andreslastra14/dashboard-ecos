@@ -4,48 +4,49 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
-type SerializedTicket = {
+type SerializedCaso = {
   id: string;
-  serie: string;
-  dispositivo: string;
-  estado: "ABIERTO" | "ESCALADO" | "RESUELTO";
-  nivel: "ALERTA_5MIN" | "ALERTA_10MIN";
-  inicio_desconexion: string;
-  actualizado: string;
-  resolucion: string | null;
-  duracion_minutos: number;
-  alertas_detalle: string[];
-  notificado: boolean;
-  notas: string[];
+  id_caso: string;
+  Nombre_Escuela: string;
+  cpu_id: string;
+  motivo_reporte: string;
+  estado: "Abierto" | "En Proceso" | "Cerrado";
+  fecha_apertura: string;
+  tipo_ticket: string;
+  comentarios: string;
+  ticket_operador: string;
+  ultima_actualizacion: string;
+  ubicacion: string;
 };
 
 const tabs = [
   { key: "TODOS", label: "Todos" },
-  { key: "ABIERTO", label: "Abiertos" },
-  { key: "ESCALADO", label: "Escalados" },
-  { key: "RESUELTO", label: "Resueltos" },
+  { key: "Abierto", label: "Abiertos" },
+  { key: "En Proceso", label: "En Proceso" },
+  { key: "Cerrado", label: "Cerrados" },
 ] as const;
 
 type TabKey = (typeof tabs)[number]["key"];
 
 const estadoBadge: Record<string, { className: string; label: string }> = {
-  ABIERTO: {
+  Abierto: {
     className: "bg-red-100 text-red-700 border-red-200",
-    label: "ABIERTO",
+    label: "Abierto",
   },
-  ESCALADO: {
+  "En Proceso": {
     className: "bg-amber-100 text-amber-700 border-amber-200",
-    label: "ESCALADO",
+    label: "En Proceso",
   },
-  RESUELTO: {
+  Cerrado: {
     className: "bg-green-100 text-green-700 border-green-200",
-    label: "RESUELTO",
+    label: "Cerrado",
   },
 };
 
 function formatDate(iso: string) {
   try {
     const d = new Date(iso);
+    if (isNaN(d.getTime())) return iso;
     return d.toLocaleString("es-SV", {
       day: "2-digit",
       month: "2-digit",
@@ -58,7 +59,7 @@ function formatDate(iso: string) {
   }
 }
 
-export function TicketFilter({ tickets }: { tickets: SerializedTicket[] }) {
+export function TicketFilter({ tickets }: { tickets: SerializedCaso[] }) {
   const [activeTab, setActiveTab] = useState<TabKey>("TODOS");
 
   const filtered =
@@ -70,7 +71,7 @@ export function TicketFilter({ tickets }: { tickets: SerializedTicket[] }) {
     <Card className="rounded-2xl shadow-sm">
       <CardHeader className="pb-2">
         <CardTitle className="text-sm font-semibold text-gray-700">
-          Tickets ({filtered.length})
+          Casos ({filtered.length})
         </CardTitle>
         <div className="flex gap-1 mt-2">
           {tabs.map(({ key, label }) => (
@@ -92,31 +93,40 @@ export function TicketFilter({ tickets }: { tickets: SerializedTicket[] }) {
       <CardContent className="p-0">
         {filtered.length === 0 ? (
           <p className="text-sm text-gray-500 py-8 text-center">
-            Sin tickets en esta categoría
+            Sin casos en esta categoria
           </p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 text-left text-xs text-gray-500 uppercase tracking-wide">
-                  <th className="px-4 py-3">Sonda</th>
+                  <th className="px-4 py-3">ID Caso</th>
+                  <th className="px-4 py-3">Escuela</th>
+                  <th className="px-4 py-3">Motivo</th>
                   <th className="px-4 py-3">Estado</th>
-                  <th className="px-4 py-3">Nivel</th>
-                  <th className="px-4 py-3">Inicio</th>
-                  <th className="px-4 py-3">Duración</th>
-                  <th className="px-4 py-3">Última actualización</th>
+                  <th className="px-4 py-3">Operador</th>
+                  <th className="px-4 py-3">Fecha</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((t) => {
-                  const badge = estadoBadge[t.estado];
+                  const badge = estadoBadge[t.estado] ?? {
+                    className: "bg-gray-100 text-gray-700 border-gray-200",
+                    label: t.estado,
+                  };
                   return (
                     <tr
                       key={t.id}
                       className="border-b border-gray-50 hover:bg-gray-50 transition-colors"
                     >
-                      <td className="px-4 py-2.5 font-medium text-gray-800">
-                        {t.serie}
+                      <td className="px-4 py-2.5 font-medium text-gray-800 font-mono text-xs">
+                        {t.id_caso}
+                      </td>
+                      <td className="px-4 py-2.5 text-gray-800">
+                        {t.Nombre_Escuela}
+                      </td>
+                      <td className="px-4 py-2.5 text-gray-600 text-xs">
+                        {t.motivo_reporte}
                       </td>
                       <td className="px-4 py-2.5">
                         <Badge
@@ -127,18 +137,10 @@ export function TicketFilter({ tickets }: { tickets: SerializedTicket[] }) {
                         </Badge>
                       </td>
                       <td className="px-4 py-2.5 text-gray-600 text-xs">
-                        {t.nivel === "ALERTA_5MIN" ? "5 min" : "10 min"}
-                      </td>
-                      <td className="px-4 py-2.5 text-gray-600 text-xs">
-                        {formatDate(t.inicio_desconexion)}
-                      </td>
-                      <td className="px-4 py-2.5 text-gray-600 text-xs">
-                        {t.estado === "RESUELTO"
-                          ? `${t.duracion_minutos} min`
-                          : "En curso"}
+                        {t.ticket_operador || "—"}
                       </td>
                       <td className="px-4 py-2.5 text-gray-500 text-xs">
-                        {formatDate(t.actualizado)}
+                        {formatDate(t.fecha_apertura)}
                       </td>
                     </tr>
                   );

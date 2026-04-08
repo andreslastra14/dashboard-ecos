@@ -1,76 +1,77 @@
-import { getTicketsRecientes, getTicketStats } from "@/lib/tickets";
+import { getCasos, getCasoStats } from "@/lib/tickets";
 import { Card, CardContent } from "@/components/ui/card";
-import { TicketCheck, AlertTriangle, ArrowUpCircle, CheckCircle2, Clock } from "lucide-react";
+import { AlertTriangle, Clock, CheckCircle2 } from "lucide-react";
 import { TicketFilter } from "@/components/TicketFilter";
 
 export const revalidate = 60;
 
-export default async function TicketsPage() {
-  const [tickets, stats] = await Promise.all([
-    getTicketsRecientes(200),
-    getTicketStats(),
+interface PageProps {
+  searchParams: Promise<{ sonda?: string }>;
+}
+
+export default async function TicketsPage({ searchParams }: PageProps) {
+  const { sonda: sondaParam } = await searchParams;
+  const [allCasos, stats] = await Promise.all([
+    getCasos(undefined, 200),
+    getCasoStats(),
   ]);
 
-  // Serialize timestamps to strings for client component
-  const serializedTickets = tickets.map((t) => ({
-    id: t.id,
-    serie: t.serie,
-    dispositivo: t.dispositivo,
-    estado: t.estado,
-    nivel: t.nivel,
-    inicio_desconexion: t.inicio_desconexion?.toDate?.()
-      ? t.inicio_desconexion.toDate().toISOString()
-      : String(t.inicio_desconexion),
-    actualizado: t.actualizado?.toDate?.()
-      ? t.actualizado.toDate().toISOString()
-      : String(t.actualizado),
-    resolucion: t.resolucion?.toDate?.()
-      ? t.resolucion.toDate().toISOString()
-      : null,
-    duracion_minutos: t.duracion_minutos,
-    alertas_detalle: t.alertas_detalle,
-    notificado: t.notificado,
-    notas: t.notas,
+  const casos = sondaParam
+    ? allCasos.filter((c) => c.cpu_id === sondaParam)
+    : allCasos;
+
+  // Serialize Firestore Timestamps to ISO strings before passing to client
+  const serializedCasos = casos.map((c) => ({
+    id: c.id,
+    id_caso: c.id_caso ?? "",
+    Nombre_Escuela: c.Nombre_Escuela ?? "",
+    cpu_id: c.cpu_id ?? "",
+    motivo_reporte: c.motivo_reporte ?? "",
+    estado: c.estado,
+    fecha_apertura: c.fecha_apertura?.toDate?.()
+      ? c.fecha_apertura.toDate().toISOString()
+      : String(c.fecha_apertura ?? ""),
+    tipo_ticket: c.tipo_ticket ?? "",
+    comentarios: c.comentarios ?? "",
+    ticket_operador: c.ticket_operador ?? "",
+    ultima_actualizacion: c.ultima_actualizacion?.toDate?.()
+      ? c.ultima_actualizacion.toDate().toISOString()
+      : String(c.ultima_actualizacion ?? ""),
+    ubicacion: c.ubicacion ?? "",
   }));
 
   const kpis = [
     {
-      label: "Tickets Abiertos",
+      label: "Abiertos",
       value: stats.abiertos,
       icon: AlertTriangle,
       color: stats.abiertos > 0 ? "#b91c1c" : "#1e3a5f",
     },
     {
-      label: "Tickets Escalados",
-      value: stats.escalados,
-      icon: ArrowUpCircle,
-      color: stats.escalados > 0 ? "#d97706" : "#1e3a5f",
+      label: "En Seguimiento",
+      value: stats.enProceso,
+      icon: Clock,
+      color: stats.enProceso > 0 ? "#d97706" : "#1e3a5f",
     },
     {
-      label: "Resueltos Hoy",
-      value: stats.resueltosHoy,
+      label: "Cerrados",
+      value: stats.cerrados,
       icon: CheckCircle2,
       color: "#16a34a",
-    },
-    {
-      label: "MTTR Promedio",
-      value: `${stats.mttrMinutos} min`,
-      icon: Clock,
-      color: "#2e6da4",
     },
   ];
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Gestión de Tickets</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Gestion de Casos</h1>
         <p className="text-sm text-gray-500 mt-1">
-          Seguimiento de incidencias de conectividad
+          Seguimiento de incidencias reportadas
         </p>
       </div>
 
       {/* KPI row */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-3 gap-3">
         {kpis.map(({ label, value, icon: Icon, color }) => (
           <Card
             key={label}
@@ -98,7 +99,7 @@ export default async function TicketsPage() {
       </div>
 
       {/* Tickets table with client-side filtering */}
-      <TicketFilter tickets={serializedTickets} />
+      <TicketFilter tickets={serializedCasos} />
     </div>
   );
 }
