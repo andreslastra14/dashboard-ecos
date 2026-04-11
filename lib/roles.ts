@@ -35,7 +35,7 @@ export const ROLES: Record<Role, RolePermissions> = {
     canManageUsers: false,
     canViewAllZones: true,
     canManageTickets: false,
-    canGenerateReports: false,
+    canGenerateReports: true,
     scopeLabel: "Todas las zonas (solo lectura)",
   },
   tecnico: {
@@ -44,7 +44,7 @@ export const ROLES: Record<Role, RolePermissions> = {
     canManageUsers: false,
     canViewAllZones: true,
     canManageTickets: true,
-    canGenerateReports: false,
+    canGenerateReports: true,
     scopeLabel: "Todas las zonas",
   },
   maestro: {
@@ -53,7 +53,7 @@ export const ROLES: Record<Role, RolePermissions> = {
     canManageUsers: false,
     canViewAllZones: false,
     canManageTickets: false,
-    canGenerateReports: false,
+    canGenerateReports: true,
     scopeLabel: "Solo su escuela (una sonda)",
   },
 };
