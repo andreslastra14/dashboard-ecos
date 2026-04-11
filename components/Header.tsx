@@ -19,32 +19,6 @@ function LiveDate() {
   );
 }
 
-function AutoRefreshTimer({ intervalMs }: { intervalMs: number }) {
-  const router = useRouter();
-  const [secondsLeft, setSecondsLeft] = useState(Math.floor(intervalMs / 1000));
-
-  useEffect(() => {
-    const tick = setInterval(() => {
-      setSecondsLeft((prev) => {
-        if (prev <= 1) {
-          router.refresh();
-          return Math.floor(intervalMs / 1000);
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(tick);
-  }, [router, intervalMs]);
-
-  const mins = Math.floor(secondsLeft / 60);
-  const secs = secondsLeft % 60;
-
-  return (
-    <span className="text-[10px] font-mono hidden sm:inline" style={{ color: "#475569" }}>
-      {mins}:{String(secs).padStart(2, "0")}
-    </span>
-  );
-}
 
 interface DeviceOption {
   id: string;
@@ -236,8 +210,6 @@ export function Header({ userName, canGenerateReport, userZona, devices = [], so
         </div>
 
         <div className="ml-auto flex items-center gap-2 sm:gap-3 shrink-0">
-          <AutoRefreshTimer intervalMs={120000} />
-
           <button
             onClick={handleRefresh}
             className="p-1.5 rounded-md transition-colors hover:bg-white/10"
