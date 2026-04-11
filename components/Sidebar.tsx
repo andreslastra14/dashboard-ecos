@@ -19,20 +19,21 @@ interface DeviceOption {
   online: boolean;
 }
 
-export function Sidebar({ devices = [], userRole }: { devices?: DeviceOption[]; userRole?: Role }) {
+export function Sidebar({ devices = [], userRole, sondaFija }: { devices?: DeviceOption[]; userRole?: Role; sondaFija?: string | null }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const router = useRouter();
-  const selectedSonda = searchParams.get("sonda");
+  const selectedSonda = sondaFija || searchParams.get("sonda");
 
   const nav = userRole === "admin"
     ? [...baseNav, { href: "/admin", label: "Admin", icon: Users }]
     : baseNav;
 
   function navHref(href: string) {
-    if (!selectedSonda) return href;
+    const sonda = sondaFija || selectedSonda;
+    if (!sonda) return href;
     const params = new URLSearchParams();
-    params.set("sonda", selectedSonda);
+    params.set("sonda", sonda);
     // Preserve zona param for escuelas page
     const zona = searchParams.get("zona");
     if (zona && href === "/escuelas") params.set("zona", zona);
@@ -83,8 +84,8 @@ export function Sidebar({ devices = [], userRole }: { devices?: DeviceOption[]; 
           );
         })}
 
-        {/* Global device filter — desktop */}
-        {devices.length > 0 && (
+        {/* Global device filter — desktop (hidden for maestro since sonda is fixed) */}
+        {devices.length > 0 && !sondaFija && (
           <div className="mx-3 mt-4 pt-3 border-t" style={{ borderColor: "#1e3a5f" }}>
             <div className="flex items-center gap-1.5 mb-2">
               <Monitor className="w-3.5 h-3.5" style={{ color: "#64748b" }} />
@@ -114,6 +115,19 @@ export function Sidebar({ devices = [], userRole }: { devices?: DeviceOption[]; 
                 <X className="w-3 h-3" /> Limpiar filtro
               </button>
             )}
+          </div>
+        )}
+        {sondaFija && devices.length > 0 && (
+          <div className="mx-3 mt-4 pt-3 border-t" style={{ borderColor: "#1e3a5f" }}>
+            <div className="flex items-center gap-1.5 mb-1">
+              <Monitor className="w-3.5 h-3.5" style={{ color: "#64748b" }} />
+              <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "#64748b" }}>
+                Mi Escuela
+              </span>
+            </div>
+            <p className="text-xs truncate" style={{ color: "#93c5fd" }}>
+              {devices[0]?.nombre || sondaFija}
+            </p>
           </div>
         )}
 

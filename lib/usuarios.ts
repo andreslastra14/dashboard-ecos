@@ -10,6 +10,7 @@ export interface Usuario {
   nombre: string;
   role: Role;
   zona_asignada: string | null;
+  sonda_asignada: string | null;
   activo: boolean;
   creado: string;
   ultimo_login: string | null;
@@ -41,6 +42,7 @@ export async function createUser(data: {
   nombre: string;
   role: Role;
   zona_asignada: string | null;
+  sonda_asignada?: string | null;
 }): Promise<string> {
   const hash = await bcrypt.hash(data.password, 10);
   const ref = await col().add({
@@ -49,6 +51,7 @@ export async function createUser(data: {
     nombre: data.nombre,
     role: data.role,
     zona_asignada: data.zona_asignada,
+    sonda_asignada: data.sonda_asignada || null,
     activo: true,
     creado: new Date().toISOString(),
     ultimo_login: null,
@@ -64,6 +67,7 @@ export async function updateUser(
     nombre: string;
     role: Role;
     zona_asignada: string | null;
+    sonda_asignada: string | null;
     activo: boolean;
   }>
 ) {
@@ -72,6 +76,7 @@ export async function updateUser(
   if (data.nombre !== undefined) update.nombre = data.nombre;
   if (data.role !== undefined) update.role = data.role;
   if (data.zona_asignada !== undefined) update.zona_asignada = data.zona_asignada;
+  if (data.sonda_asignada !== undefined) update.sonda_asignada = data.sonda_asignada;
   if (data.activo !== undefined) update.activo = data.activo;
   if (data.password) update.password_hash = await bcrypt.hash(data.password, 10);
   await col().doc(id).update(update);

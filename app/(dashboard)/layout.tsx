@@ -27,12 +27,17 @@ export default async function DashboardLayout({
 
   const devices = await getDeviceList();
 
+  // For maestro role, only show their assigned device
+  const filteredDevices = session.role === "maestro" && session.sondaAsignada
+    ? devices.filter((d) => d.id === session.sondaAsignada)
+    : devices;
+
   return (
     <>
       <Header userName={session.nombre} />
       <div className="flex flex-1 overflow-hidden">
         <Suspense fallback={null}>
-          <Sidebar devices={devices} userRole={session.role} />
+          <Sidebar devices={filteredDevices} userRole={session.role} sondaFija={session.sondaAsignada} />
         </Suspense>
         <main className="flex-1 overflow-y-auto p-4 lg:p-6 pb-20 lg:pb-6">{children}</main>
       </div>

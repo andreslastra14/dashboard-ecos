@@ -14,6 +14,7 @@ export interface SessionPayload {
   nombre: string;
   role: Role;
   zonaAsignada: string | null;
+  sondaAsignada: string | null;
   expiresAt: Date;
 }
 
@@ -34,6 +35,7 @@ export async function decrypt(session: string): Promise<SessionPayload | null> {
       nombre: payload.nombre as string,
       role: payload.role as Role,
       zonaAsignada: (payload.zonaAsignada as string) || null,
+      sondaAsignada: (payload.sondaAsignada as string) || null,
       expiresAt: new Date(payload.expiresAt as string),
     };
   } catch {
@@ -47,6 +49,7 @@ export async function createSession(user: {
   nombre: string;
   role: Role;
   zona_asignada: string | null;
+  sonda_asignada?: string | null;
 }) {
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
   const session = await encrypt({
@@ -55,6 +58,7 @@ export async function createSession(user: {
     nombre: user.nombre,
     role: user.role,
     zonaAsignada: user.zona_asignada,
+    sondaAsignada: user.sonda_asignada || null,
     expiresAt,
   });
 

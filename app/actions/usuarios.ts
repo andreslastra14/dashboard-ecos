@@ -26,13 +26,14 @@ export async function createUserAction(
   const nombre = formData.get("nombre") as string;
   const role = formData.get("role") as Role;
   const zona_asignada = (formData.get("zona_asignada") as string) || null;
+  const sonda_asignada = (formData.get("sonda_asignada") as string) || null;
 
   if (!email || !password || !nombre || !role) {
     return { error: "Todos los campos son requeridos." };
   }
 
   try {
-    await createUser({ email, password, nombre, role, zona_asignada });
+    await createUser({ email, password, nombre, role, zona_asignada, sonda_asignada });
   } catch {
     return { error: "Error al crear usuario. Verifique que el email no esté duplicado." };
   }
@@ -51,6 +52,7 @@ export async function updateUserAction(
   const nombre = formData.get("nombre") as string;
   const role = formData.get("role") as Role;
   const zona_asignada = (formData.get("zona_asignada") as string) || null;
+  const sonda_asignada = (formData.get("sonda_asignada") as string) || null;
   const password = formData.get("password") as string;
   const activo = formData.get("activo") === "true";
 
@@ -64,6 +66,7 @@ export async function updateUserAction(
       nombre,
       role,
       zona_asignada,
+      sonda_asignada,
       activo,
       ...(password ? { password } : {}),
     });
