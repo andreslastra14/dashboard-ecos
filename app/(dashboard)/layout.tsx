@@ -39,6 +39,8 @@ export default async function DashboardLayout({
         userName={session.nombre}
         canGenerateReport={ROLES[session.role].canGenerateReports}
         userZona={session.role === "supervisor" ? session.zonaAsignada : null}
+        devices={filteredDevices}
+        sondaFija={session.sondaAsignada}
       />
       <div className="flex flex-1 overflow-hidden">
         <Suspense fallback={null}>

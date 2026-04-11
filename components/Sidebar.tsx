@@ -137,22 +137,6 @@ export function Sidebar({ devices = [], userRole, sondaFija }: { devices?: Devic
         </div>
       </aside>
 
-      {/* Mobile: sonda indicator bar (below header, above content) */}
-      {selectedSonda && (
-        <div
-          className="lg:hidden fixed top-[52px] left-0 right-0 z-40 flex items-center justify-between px-3 py-1.5 border-b text-xs"
-          style={{ backgroundColor: "#0f1d32", borderColor: "#1e3a5f", color: "#93c5fd" }}
-        >
-          <span className="truncate">
-            <Monitor className="w-3 h-3 inline mr-1" />
-            {selectedDevice?.nombre || selectedSonda}
-          </span>
-          <button onClick={() => handleFilterChange("")} className="shrink-0 ml-2">
-            <X className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      )}
-
       {/* Bottom nav — mobile */}
       <nav
         className="lg:hidden fixed bottom-0 left-0 right-0 z-50 flex border-t"

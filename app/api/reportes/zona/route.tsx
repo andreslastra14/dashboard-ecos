@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { ZoneReportDocument } from "@/lib/pdf/ZoneReport";
-import { getReportData } from "@/lib/pdf/report-data";
+import { getReportData, getReportDataBySondas } from "@/lib/pdf/report-data";
 import { getSession } from "@/lib/auth";
 import { DEPARTAMENTOS } from "@/lib/geo";
 
@@ -11,34 +11,13 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 
-  // Parse parameters
   const zonasParam = req.nextUrl.searchParams.get("zonas");
+  const sondasParam = req.nextUrl.searchParams.get("sondas");
   const desdeParam = req.nextUrl.searchParams.get("desde");
   const hastaParam = req.nextUrl.searchParams.get("hasta");
 
-  if (!zonasParam) {
-    return NextResponse.json({ error: "Parametro 'zonas' requerido" }, { status: 400 });
-  }
-
-  const zonas = zonasParam.split(",").map((z) => z.trim()).filter(Boolean);
-  if (zonas.length === 0) {
-    return NextResponse.json({ error: "Debe seleccionar al menos una zona" }, { status: 400 });
-  }
-
-  // Validate zone names
-  const validNames = DEPARTAMENTOS.map((d) => d.nombre);
-  for (const z of zonas) {
-    if (!validNames.includes(z)) {
-      return NextResponse.json({ error: `Zona no valida: ${z}` }, { status: 400 });
-    }
-  }
-
-  // Check zone access for supervisors
-  if (session.role === "supervisor" && session.zonaAsignada) {
-    const unauthorized = zonas.filter((z) => z !== session.zonaAsignada);
-    if (unauthorized.length > 0) {
-      return NextResponse.json({ error: `Sin acceso a: ${unauthorized.join(", ")}` }, { status: 403 });
-    }
+  if (!zonasParam && !sondasParam) {
+    return NextResponse.json({ error: "Parametro 'zonas' o 'sondas' requerido" }, { status: 400 });
   }
 
   // Parse dates (default: last 7 days)
@@ -48,7 +27,6 @@ export async function GET(req: NextRequest) {
   defaultDesde.setDate(defaultDesde.getDate() - 7);
   const desde = desdeParam ? new Date(desdeParam + "T00:00:00") : defaultDesde;
 
-  // Max range: 365 days
   const diffDays = (hasta.getTime() - desde.getTime()) / (1000 * 60 * 60 * 24);
   if (diffDays > 365) {
     return NextResponse.json({ error: "Rango maximo: 365 dias" }, { status: 400 });
@@ -57,13 +35,46 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Fecha 'desde' debe ser anterior a 'hasta'" }, { status: 400 });
   }
 
-  const data = await getReportData(zonas, desde, hasta);
+  let data;
+  let safeName: string;
+
+  if (sondasParam) {
+    // Report by specific sondas
+    const sondas = sondasParam.split(",").map((s) => s.trim()).filter(Boolean);
+    if (sondas.length === 0) {
+      return NextResponse.json({ error: "Debe seleccionar al menos una sonda" }, { status: 400 });
+    }
+    data = await getReportDataBySondas(sondas, desde, hasta);
+    safeName = sondas.length === 1 ? sondas[0] : `${sondas.length}-sondas`;
+  } else {
+    // Report by zones
+    const zonas = zonasParam!.split(",").map((z) => z.trim()).filter(Boolean);
+    if (zonas.length === 0) {
+      return NextResponse.json({ error: "Debe seleccionar al menos una zona" }, { status: 400 });
+    }
+
+    const validNames = DEPARTAMENTOS.map((d) => d.nombre);
+    for (const z of zonas) {
+      if (!validNames.includes(z)) {
+        return NextResponse.json({ error: `Zona no valida: ${z}` }, { status: 400 });
+      }
+    }
+
+    if (session.role === "supervisor" && session.zonaAsignada) {
+      const unauthorized = zonas.filter((z) => z !== session.zonaAsignada);
+      if (unauthorized.length > 0) {
+        return NextResponse.json({ error: `Sin acceso a: ${unauthorized.join(", ")}` }, { status: 403 });
+      }
+    }
+
+    data = await getReportData(zonas, desde, hasta);
+    safeName = zonas.length === 1
+      ? zonas[0].normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-")
+      : `${zonas.length}-departamentos`;
+  }
+
   const buffer = await renderToBuffer(<ZoneReportDocument data={data} />);
   const bytes = new Uint8Array(buffer);
-
-  const safeName = zonas.length === 1
-    ? zonas[0].normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-")
-    : `${zonas.length}-departamentos`;
   const date = new Date().toISOString().slice(0, 10);
 
   return new NextResponse(bytes, {

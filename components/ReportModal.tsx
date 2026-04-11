@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { X, FileDown, Check, CalendarDays } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { X, FileDown, Check, CalendarDays, Map, Monitor, Search } from "lucide-react";
 
 const DEPARTAMENTOS = [
   "Ahuachapan", "Santa Ana", "Sonsonate", "Chalatenango", "La Libertad",
@@ -10,15 +10,21 @@ const DEPARTAMENTOS = [
 ];
 
 type DatePreset = "today" | "7d" | "30d" | "this_month" | "last_month" | "custom";
+type SelectMode = "zona" | "sonda";
 
 const PRESETS: { key: DatePreset; label: string }[] = [
   { key: "today", label: "Hoy" },
-  { key: "7d", label: "Ultimos 7 dias" },
-  { key: "30d", label: "Ultimos 30 dias" },
+  { key: "7d", label: "7 dias" },
+  { key: "30d", label: "30 dias" },
   { key: "this_month", label: "Este mes" },
   { key: "last_month", label: "Mes anterior" },
   { key: "custom", label: "Personalizado" },
 ];
+
+interface DeviceOption {
+  id: string;
+  nombre: string;
+}
 
 function getPresetDates(preset: DatePreset): { desde: string; hasta: string } {
   const now = new Date();
@@ -53,17 +59,38 @@ function getPresetDates(preset: DatePreset): { desde: string; hasta: string } {
 interface Props {
   open: boolean;
   onClose: () => void;
-  userZona?: string | null; // supervisor's locked zone
+  userZona?: string | null;
 }
 
 export function ReportModal({ open, onClose, userZona }: Props) {
+  const [mode, setMode] = useState<SelectMode>("zona");
   const [selectedZones, setSelectedZones] = useState<Set<string>>(
     userZona ? new Set([userZona]) : new Set()
   );
+  const [selectedSondas, setSelectedSondas] = useState<Set<string>>(new Set());
   const [preset, setPreset] = useState<DatePreset>("7d");
   const [customDesde, setCustomDesde] = useState("");
   const [customHasta, setCustomHasta] = useState("");
   const [loading, setLoading] = useState(false);
+  const [devices, setDevices] = useState<DeviceOption[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  useEffect(() => {
+    if (open && devices.length === 0) {
+      fetch("/api/dispositivos/lista")
+        .then((r) => r.json())
+        .then((d) => setDevices(d))
+        .catch(() => setDevices([]));
+    }
+  }, [open, devices.length]);
+
+  const filteredDevices = useMemo(() => {
+    if (!searchTerm) return devices;
+    const term = searchTerm.toLowerCase();
+    return devices.filter(
+      (d) => d.nombre.toLowerCase().includes(term) || d.id.toLowerCase().includes(term)
+    );
+  }, [devices, searchTerm]);
 
   if (!open) return null;
 
@@ -79,7 +106,7 @@ export function ReportModal({ open, onClose, userZona }: Props) {
     });
   }
 
-  function selectAll() {
+  function selectAllZones() {
     if (isLocked) return;
     if (selectedZones.size === DEPARTAMENTOS.length) {
       setSelectedZones(new Set());
@@ -88,18 +115,42 @@ export function ReportModal({ open, onClose, userZona }: Props) {
     }
   }
 
+  function toggleSonda(id: string) {
+    setSelectedSondas((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function selectAllSondas() {
+    if (selectedSondas.size === devices.length) {
+      setSelectedSondas(new Set());
+    } else {
+      setSelectedSondas(new Set(devices.map((d) => d.id)));
+    }
+  }
+
   const { desde, hasta } = preset === "custom"
     ? { desde: customDesde, hasta: customHasta }
     : getPresetDates(preset);
 
-  const canGenerate = selectedZones.size > 0 && desde && hasta;
+  const hasSelection = mode === "zona" ? selectedZones.size > 0 : selectedSondas.size > 0;
+  const canGenerate = hasSelection && desde && hasta;
 
   async function handleGenerate() {
     if (!canGenerate) return;
     setLoading(true);
     try {
-      const zonasStr = Array.from(selectedZones).join(",");
-      const url = `/api/reportes/zona?zonas=${encodeURIComponent(zonasStr)}&desde=${desde}&hasta=${hasta}`;
+      let url: string;
+      if (mode === "zona") {
+        const zonasStr = Array.from(selectedZones).join(",");
+        url = `/api/reportes/zona?zonas=${encodeURIComponent(zonasStr)}&desde=${desde}&hasta=${hasta}`;
+      } else {
+        const sondasStr = Array.from(selectedSondas).join(",");
+        url = `/api/reportes/zona?sondas=${encodeURIComponent(sondasStr)}&desde=${desde}&hasta=${hasta}`;
+      }
       const res = await fetch(url);
       if (!res.ok) {
         const err = await res.json().catch(() => ({ error: "Error desconocido" }));
@@ -119,12 +170,18 @@ export function ReportModal({ open, onClose, userZona }: Props) {
     }
   }
 
+  const selectionLabel = mode === "zona"
+    ? selectedZones.size > 0
+      ? `${selectedZones.size} zona${selectedZones.size > 1 ? "s" : ""}`
+      : "Seleccione zona(s)"
+    : selectedSondas.size > 0
+      ? `${selectedSondas.size} sonda${selectedSondas.size > 1 ? "s" : ""}`
+      : "Seleccione sonda(s)";
+
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center">
-      {/* Backdrop */}
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
 
-      {/* Modal */}
       <div
         className="relative w-full max-w-lg mx-4 rounded-2xl shadow-2xl border overflow-hidden"
         style={{ backgroundColor: "#0f1d32", borderColor: "#1e3a5f" }}
@@ -149,12 +206,12 @@ export function ReportModal({ open, onClose, userZona }: Props) {
                 Periodo
               </span>
             </div>
-            <div className="flex flex-wrap gap-2 mb-3">
+            <div className="flex flex-wrap gap-1.5 mb-3">
               {PRESETS.map((p) => (
                 <button
                   key={p.key}
                   onClick={() => setPreset(p.key)}
-                  className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+                  className="px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all"
                   style={
                     preset === p.key
                       ? { backgroundColor: "#1e3a5f", color: "#93c5fd", border: "1px solid #2e6da4" }
@@ -196,67 +253,166 @@ export function ReportModal({ open, onClose, userZona }: Props) {
             )}
           </div>
 
-          {/* Zone selection */}
+          {/* Mode toggle: Zona / Sonda */}
           <div>
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "#64748b" }}>
-                Departamentos ({selectedZones.size}/{DEPARTAMENTOS.length})
-              </span>
-              {!isLocked && (
+            <div className="flex rounded-lg overflow-hidden border" style={{ borderColor: "#1e3a5f" }}>
+              <button
+                onClick={() => setMode("zona")}
+                className="flex-1 flex items-center justify-center gap-2 py-2 text-xs font-semibold transition-all"
+                style={
+                  mode === "zona"
+                    ? { backgroundColor: "#1e3a5f", color: "#93c5fd" }
+                    : { backgroundColor: "#0a1628", color: "#64748b" }
+                }
+              >
+                <Map className="w-3.5 h-3.5" />
+                Por Zona
+              </button>
+              <button
+                onClick={() => setMode("sonda")}
+                className="flex-1 flex items-center justify-center gap-2 py-2 text-xs font-semibold transition-all"
+                style={
+                  mode === "sonda"
+                    ? { backgroundColor: "#1e3a5f", color: "#93c5fd" }
+                    : { backgroundColor: "#0a1628", color: "#64748b" }
+                }
+              >
+                <Monitor className="w-3.5 h-3.5" />
+                Por Sonda
+              </button>
+            </div>
+          </div>
+
+          {/* Zone selection */}
+          {mode === "zona" && (
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "#64748b" }}>
+                  Departamentos ({selectedZones.size}/{DEPARTAMENTOS.length})
+                </span>
+                {!isLocked && (
+                  <button
+                    onClick={selectAllZones}
+                    className="text-xs font-medium hover:underline"
+                    style={{ color: "#93c5fd" }}
+                  >
+                    {selectedZones.size === DEPARTAMENTOS.length ? "Deseleccionar" : "Seleccionar todo"}
+                  </button>
+                )}
+              </div>
+              {isLocked && (
+                <p className="text-xs mb-2" style={{ color: "#d97706" }}>
+                  Supervisor: solo su zona asignada.
+                </p>
+              )}
+              <div className="grid grid-cols-2 gap-1.5">
+                {DEPARTAMENTOS.map((zone) => {
+                  const selected = selectedZones.has(zone);
+                  const locked = isLocked && zone !== userZona;
+                  return (
+                    <button
+                      key={zone}
+                      onClick={() => toggleZone(zone)}
+                      disabled={locked}
+                      className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-left transition-all disabled:opacity-30"
+                      style={
+                        selected
+                          ? { backgroundColor: "#1e3a5f", color: "#93c5fd", border: "1px solid #2e6da4" }
+                          : { backgroundColor: "#0a162800", color: "#94a3b8", border: "1px solid #1e3a5f40" }
+                      }
+                    >
+                      <div
+                        className="w-4 h-4 rounded flex items-center justify-center shrink-0"
+                        style={
+                          selected
+                            ? { backgroundColor: "#2e6da4" }
+                            : { backgroundColor: "#0a1628", border: "1px solid #1e3a5f" }
+                        }
+                      >
+                        {selected && <Check className="w-3 h-3 text-white" />}
+                      </div>
+                      {zone}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Sonda selection */}
+          {mode === "sonda" && (
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "#64748b" }}>
+                  Sondas ({selectedSondas.size}/{devices.length})
+                </span>
                 <button
-                  onClick={selectAll}
+                  onClick={selectAllSondas}
                   className="text-xs font-medium hover:underline"
                   style={{ color: "#93c5fd" }}
                 >
-                  {selectedZones.size === DEPARTAMENTOS.length ? "Deseleccionar todo" : "Seleccionar todo"}
+                  {selectedSondas.size === devices.length ? "Deseleccionar" : "Seleccionar todo"}
                 </button>
-              )}
-            </div>
-            {isLocked && (
-              <p className="text-xs mb-2" style={{ color: "#d97706" }}>
-                Supervisor: solo puede generar reportes de su zona asignada.
-              </p>
-            )}
-            <div className="grid grid-cols-2 gap-1.5">
-              {DEPARTAMENTOS.map((zone) => {
-                const selected = selectedZones.has(zone);
-                const locked = isLocked && zone !== userZona;
-                return (
-                  <button
-                    key={zone}
-                    onClick={() => toggleZone(zone)}
-                    disabled={locked}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-left transition-all disabled:opacity-30"
-                    style={
-                      selected
-                        ? { backgroundColor: "#1e3a5f", color: "#93c5fd", border: "1px solid #2e6da4" }
-                        : { backgroundColor: "#0a162800", color: "#94a3b8", border: "1px solid #1e3a5f40" }
-                    }
-                  >
-                    <div
-                      className="w-4 h-4 rounded flex items-center justify-center shrink-0"
+              </div>
+
+              {/* Search */}
+              <div className="relative mb-3">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5" style={{ color: "#64748b" }} />
+                <input
+                  type="text"
+                  placeholder="Buscar escuela o serial..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full rounded-lg border pl-9 pr-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  style={{ backgroundColor: "#0a1628", color: "#cbd5e1", borderColor: "#1e3a5f" }}
+                />
+              </div>
+
+              <div className="space-y-1 max-h-48 overflow-y-auto">
+                {filteredDevices.map((d) => {
+                  const selected = selectedSondas.has(d.id);
+                  return (
+                    <button
+                      key={d.id}
+                      onClick={() => toggleSonda(d.id)}
+                      className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-left transition-all"
                       style={
                         selected
-                          ? { backgroundColor: "#2e6da4" }
-                          : { backgroundColor: "#0a1628", border: "1px solid #1e3a5f" }
+                          ? { backgroundColor: "#1e3a5f", color: "#93c5fd", border: "1px solid #2e6da4" }
+                          : { backgroundColor: "#0a162800", color: "#94a3b8", border: "1px solid #1e3a5f40" }
                       }
                     >
-                      {selected && <Check className="w-3 h-3 text-white" />}
-                    </div>
-                    {zone}
-                  </button>
-                );
-              })}
+                      <div
+                        className="w-4 h-4 rounded flex items-center justify-center shrink-0"
+                        style={
+                          selected
+                            ? { backgroundColor: "#2e6da4" }
+                            : { backgroundColor: "#0a1628", border: "1px solid #1e3a5f" }
+                        }
+                      >
+                        {selected && <Check className="w-3 h-3 text-white" />}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate">{d.nombre}</p>
+                        <p className="text-[10px] font-mono opacity-60">{d.id}</p>
+                      </div>
+                    </button>
+                  );
+                })}
+                {filteredDevices.length === 0 && (
+                  <p className="text-xs text-center py-4" style={{ color: "#64748b" }}>
+                    {devices.length === 0 ? "Cargando sondas..." : "Sin resultados"}
+                  </p>
+                )}
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Footer */}
         <div className="px-5 py-4 border-t flex items-center justify-between" style={{ borderColor: "#1e3a5f" }}>
           <p className="text-xs" style={{ color: "#475569" }}>
-            {selectedZones.size > 0
-              ? `${selectedZones.size} zona${selectedZones.size > 1 ? "s" : ""} seleccionada${selectedZones.size > 1 ? "s" : ""}`
-              : "Seleccione al menos una zona"}
+            {selectionLabel}
           </p>
           <button
             onClick={handleGenerate}
