@@ -72,6 +72,25 @@ export async function getRegistrosRecientes(limite = 200): Promise<RegistroHisto
   }
 }
 
+// Get historical records filtered by date range (all devices)
+export async function getRegistrosPorRango(desde: Date, hasta: Date): Promise<RegistroHistorico[]> {
+  try {
+    const db = getDb();
+    const { Timestamp } = await import("firebase-admin/firestore");
+    const snap = await db
+      .collection("registros")
+      .where("timestamp", ">=", Timestamp.fromDate(desde))
+      .where("timestamp", "<=", Timestamp.fromDate(hasta))
+      .orderBy("timestamp", "desc")
+      .limit(10000)
+      .get();
+    return snap.docs.map((doc) => ({ id: doc.id, ...doc.data() } as RegistroHistorico));
+  } catch (err) {
+    console.error("getRegistrosPorRango failed:", err);
+    return [];
+  }
+}
+
 // Calculate uptime per device from historical records
 export function calcularUptimePorDispositivo(registros: RegistroHistorico[]): Record<string, { cpuId: string; uptime: number; total: number; online: number }> {
   const stats: Record<string, { cpuId: string; total: number; online: number; uptime: number }> = {};

@@ -2,6 +2,7 @@ import { Sidebar } from "@/components/Sidebar";
 import { Header } from "@/components/Header";
 import { getDispositivos, getEscuelas } from "@/lib/queries";
 import { getSession } from "@/lib/auth";
+import { ROLES } from "@/lib/roles";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
@@ -34,7 +35,11 @@ export default async function DashboardLayout({
 
   return (
     <>
-      <Header userName={session.nombre} />
+      <Header
+        userName={session.nombre}
+        canGenerateReport={ROLES[session.role].canGenerateReports}
+        userZona={session.role === "supervisor" ? session.zonaAsignada : null}
+      />
       <div className="flex flex-1 overflow-hidden">
         <Suspense fallback={null}>
           <Sidebar devices={filteredDevices} userRole={session.role} sondaFija={session.sondaAsignada} />
