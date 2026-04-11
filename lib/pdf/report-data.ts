@@ -35,6 +35,31 @@ export interface ZoneSection {
   escuelas: SchoolRow[];
 }
 
+export interface SondaRecord {
+  fecha: string;
+  online: boolean;
+  downloadMbps: number;
+  cpuUsage: number;
+  ramUsage: number;
+  upsStatus: string;
+  upsNivel: number;
+  filtroMined: string;
+  filtroAdultos: string;
+  filtroStreaming: string;
+  filtroApuestas: string;
+}
+
+export interface SondaDetail {
+  nombre: string;
+  cpuId: string;
+  zona: string;
+  totalRegistros: number;
+  ticketsTotal: number;
+  ticketsAbiertos: number;
+  ticketsCerrados: number;
+  records: SondaRecord[];
+}
+
 export interface ReportData {
   titulo: string;
   zonas: string[];
@@ -52,6 +77,8 @@ export interface ReportData {
   dailyStats: DailyStats[];
   // Per-zone breakdown
   zoneSections: ZoneSection[];
+  // Raw records per sonda
+  sondaDetails: SondaDetail[];
   // Tickets
   ticketsAbiertos: Array<{
     idCaso: string;
@@ -207,6 +234,9 @@ export async function getReportData(
       };
     });
 
+  // Build sonda details with raw records
+  const sondaDetails = buildSondaDetails(allZoneCpuIds, zoneRegistros, casos, escuelasMap, dispositivos);
+
   const desdeStr = desde.toISOString().slice(0, 10);
   const hastaStr = hasta.toISOString().slice(0, 10);
 
@@ -231,8 +261,88 @@ export async function getReportData(
     filtroOk: totalFiltro,
     dailyStats,
     zoneSections,
+    sondaDetails,
     ticketsAbiertos,
   };
+}
+
+// Shared helper: build per-sonda raw record details
+function buildSondaDetails(
+  cpuIds: Set<string>,
+  registros: RegistroHistorico[],
+  casos: import("@/lib/firebase").Caso[],
+  escuelasMap: Record<string, Escuela>,
+  dispositivos: Dispositivo[]
+): SondaDetail[] {
+  const details: SondaDetail[] = [];
+
+  for (const cpuId of cpuIds) {
+    const esc = escuelasMap[cpuId];
+    const dev = dispositivos.find((d) => {
+      const cid = (d.cpu_id || d.id).replace(/"/g, "").trim();
+      return cid === cpuId;
+    });
+    const lat = esc?.latitud_fija || dev?.latitud || 0;
+    const lng = esc?.longitud_fija || dev?.longitud || 0;
+    const zona = clasificarPorDepartamento(lat, lng) || "Sin zona";
+
+    // Raw records for this sonda, sorted by timestamp desc
+    const sondaRegs = registros
+      .filter((r) => r.cpu_id === cpuId)
+      .sort((a, b) => {
+        const ta = a.timestamp && typeof a.timestamp === "object" && "toDate" in a.timestamp
+          ? (a.timestamp as { toDate: () => Date }).toDate().getTime() : 0;
+        const tb = b.timestamp && typeof b.timestamp === "object" && "toDate" in b.timestamp
+          ? (b.timestamp as { toDate: () => Date }).toDate().getTime() : 0;
+        return tb - ta;
+      });
+
+    const records: SondaRecord[] = sondaRegs.map((r) => {
+      let fecha = "";
+      const ts = r.timestamp;
+      if (ts && typeof ts === "object" && "toDate" in ts) {
+        const d = (ts as { toDate: () => Date }).toDate();
+        fecha = d.toLocaleString("es-SV", {
+          day: "2-digit", month: "2-digit", year: "2-digit",
+          hour: "2-digit", minute: "2-digit",
+          timeZone: "America/El_Salvador",
+        });
+      }
+      return {
+        fecha,
+        online: r.online,
+        downloadMbps: Math.round((r.download_mbps || 0) * 100) / 100,
+        cpuUsage: Math.round(r.cpu_usage || 0),
+        ramUsage: Math.round(r.ram_usage || 0),
+        upsStatus: r.ups_status || "N/A",
+        upsNivel: r.ups_nivel || 0,
+        filtroMined: r.web_check_mined || "N/A",
+        filtroAdultos: r.web_check_adultos || "N/A",
+        filtroStreaming: r.web_check_streaming || "N/A",
+        filtroApuestas: r.web_check_apuestas || "N/A",
+      };
+    });
+
+    // Ticket counts for this sonda
+    const sondaCasos = casos.filter((c) => c.cpu_id === cpuId);
+    const ticketsAbiertosCount = sondaCasos.filter((c) => c.estado === "Abierto" || c.estado === "En Proceso").length;
+    const ticketsCerradosCount = sondaCasos.filter((c) => c.estado === "Cerrado").length;
+
+    details.push({
+      nombre: esc?.nombre_escuela || cpuId,
+      cpuId,
+      zona,
+      totalRegistros: records.length,
+      ticketsTotal: sondaCasos.length,
+      ticketsAbiertos: ticketsAbiertosCount,
+      ticketsCerrados: ticketsCerradosCount,
+      records,
+    });
+  }
+
+  // Sort by name
+  details.sort((a, b) => a.nombre.localeCompare(b.nombre));
+  return details;
 }
 
 // Report by specific sonda IDs (cpu_ids)
@@ -378,6 +488,9 @@ export async function getReportDataBySondas(
       };
     });
 
+  // Build sonda details
+  const sondaDetails = buildSondaDetails(allCpuIds, sondaRegistros, casos, escuelasMap, dispositivos);
+
   const zonaNames = Array.from(byZone.keys());
   const desdeStr = desde.toISOString().slice(0, 10);
   const hastaStr = hasta.toISOString().slice(0, 10);
@@ -405,6 +518,7 @@ export async function getReportDataBySondas(
     filtroOk: totalFiltro,
     dailyStats,
     zoneSections,
+    sondaDetails,
     ticketsAbiertos,
   };
 }

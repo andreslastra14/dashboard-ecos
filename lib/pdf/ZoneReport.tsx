@@ -1,5 +1,5 @@
 import { Document, Page, Text, View, StyleSheet, Svg, Rect, Line, Circle, G } from "@react-pdf/renderer";
-import type { ReportData, DailyStats } from "./report-data";
+import type { ReportData, DailyStats, SondaDetail } from "./report-data";
 
 const blue = "#1e3a5f";
 const midBlue = "#2e6da4";
@@ -389,6 +389,71 @@ export function ZoneReportDocument({ data }: { data: ReportData }) {
           </View>
 
           <View style={s.footer}>
+            <Text>ECOS — MINED El Salvador</Text>
+            <Text>{data.fechaGeneracion}</Text>
+          </View>
+        </Page>
+      ))}
+
+      {/* Per-sonda raw record pages (landscape) */}
+      {data.sondaDetails.map((sonda) => (
+        <Page key={`sonda-${sonda.cpuId}`} size="LETTER" orientation="landscape" style={s.page} wrap>
+          <Text style={s.sectionTitle}>{sonda.nombre}</Text>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 8 }}>
+            <Text style={{ fontSize: 8, color: gray }}>
+              Serial: {sonda.cpuId} | Zona: {sonda.zona}
+            </Text>
+            <Text style={{ fontSize: 8, color: gray }}>
+              {sonda.totalRegistros} registros | Tickets: {sonda.ticketsTotal} (abiertos: {sonda.ticketsAbiertos}, cerrados: {sonda.ticketsCerrados})
+            </Text>
+          </View>
+
+          {sonda.records.length === 0 ? (
+            <Text style={s.noData}>Sin registros en este periodo</Text>
+          ) : (
+            <View style={s.table} wrap>
+              <View style={s.tableHeader} wrap={false}>
+                <Text style={[s.tableHeaderCell, { width: "12%" }]}>Fecha/Hora</Text>
+                <Text style={[s.tableHeaderCell, { width: "7%" }]}>Estado</Text>
+                <Text style={[s.tableHeaderCell, { width: "8%" }]}>Vel (Mbps)</Text>
+                <Text style={[s.tableHeaderCell, { width: "7%" }]}>CPU %</Text>
+                <Text style={[s.tableHeaderCell, { width: "7%" }]}>RAM %</Text>
+                <Text style={[s.tableHeaderCell, { width: "9%" }]}>UPS</Text>
+                <Text style={[s.tableHeaderCell, { width: "7%" }]}>UPS %</Text>
+                <Text style={[s.tableHeaderCell, { width: "11%" }]}>MINED</Text>
+                <Text style={[s.tableHeaderCell, { width: "11%" }]}>Adultos</Text>
+                <Text style={[s.tableHeaderCell, { width: "11%" }]}>Streaming</Text>
+                <Text style={[s.tableHeaderCell, { width: "10%" }]}>Apuestas</Text>
+              </View>
+              {sonda.records.map((r, i) => (
+                <View key={i} style={[s.tableRow, i % 2 === 0 ? { backgroundColor: "#f8fafc" } : {}]} wrap={false}>
+                  <Text style={[s.tableCell, { width: "12%" }]}>{r.fecha}</Text>
+                  <Text style={[s.tableCell, { width: "7%" }, r.online ? s.online : s.offline]}>
+                    {r.online ? "ON" : "OFF"}
+                  </Text>
+                  <Text style={[s.tableCell, { width: "8%" }]}>{r.downloadMbps}</Text>
+                  <Text style={[s.tableCell, { width: "7%" }, r.cpuUsage > 80 ? { color: red } : {}]}>{r.cpuUsage}</Text>
+                  <Text style={[s.tableCell, { width: "7%" }, r.ramUsage > 80 ? { color: red } : {}]}>{r.ramUsage}</Text>
+                  <Text style={[s.tableCell, { width: "9%" }]}>{r.upsStatus}</Text>
+                  <Text style={[s.tableCell, { width: "7%" }]}>{r.upsNivel}</Text>
+                  <Text style={[s.tableCell, { width: "11%" }, r.filtroMined === "ACCESIBLE" ? { color: green } : { color: red }]}>
+                    {r.filtroMined === "ACCESIBLE" ? "OK" : r.filtroMined}
+                  </Text>
+                  <Text style={[s.tableCell, { width: "11%" }, r.filtroAdultos === "BLOQUEADO" ? { color: green } : { color: red }]}>
+                    {r.filtroAdultos === "BLOQUEADO" ? "BLOQ" : r.filtroAdultos}
+                  </Text>
+                  <Text style={[s.tableCell, { width: "11%" }, r.filtroStreaming === "BLOQUEADO" ? { color: green } : { color: amber }]}>
+                    {r.filtroStreaming === "BLOQUEADO" ? "BLOQ" : r.filtroStreaming}
+                  </Text>
+                  <Text style={[s.tableCell, { width: "10%" }, r.filtroApuestas === "BLOQUEADO" ? { color: green } : { color: red }]}>
+                    {r.filtroApuestas === "BLOQUEADO" ? "BLOQ" : r.filtroApuestas}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          )}
+
+          <View style={s.footer} fixed>
             <Text>ECOS — MINED El Salvador</Text>
             <Text>{data.fechaGeneracion}</Text>
           </View>
