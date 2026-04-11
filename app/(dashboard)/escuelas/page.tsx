@@ -3,7 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { SchoolMapWrapper } from "@/components/SchoolMapWrapper";
 import { ZoneFilter } from "@/components/ZoneFilter";
+import { ReportDownloadButton } from "@/components/ReportDownloadButton";
 import { clasificarPorDepartamento, getDepartamento, DEPARTAMENTOS } from "@/lib/geo";
+import { getSession } from "@/lib/auth";
+import { ROLES } from "@/lib/roles";
 import { Suspense } from "react";
 
 export const revalidate = 60;
@@ -14,6 +17,9 @@ export default async function EscuelasPage({
   searchParams: Promise<{ zona?: string; sonda?: string }>;
 }) {
   const { zona, sonda: sondaParam } = await searchParams;
+  const session = await getSession();
+  const canGenerateReport = session ? ROLES[session.role].canGenerateReports : false;
+
   const [allDispositivos, escuelas] = await Promise.all([
     getDispositivos(),
     getEscuelas(),
@@ -124,9 +130,12 @@ export default async function EscuelasPage({
       </div>
 
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <Suspense fallback={null}>
-          <ZoneFilter stats={zoneStats} />
-        </Suspense>
+        <div className="flex items-center gap-3">
+          <Suspense fallback={null}>
+            <ZoneFilter stats={zoneStats} />
+          </Suspense>
+          <ReportDownloadButton zona={zona || null} canGenerate={canGenerateReport} />
+        </div>
         {zona && (
           <span
             className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium text-white"

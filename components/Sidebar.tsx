@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams, useRouter } from "next/navigation";
-import { LayoutDashboard, Map, Zap, AlertTriangle, TicketCheck, Monitor, X } from "lucide-react";
+import { LayoutDashboard, Map, Zap, AlertTriangle, TicketCheck, Monitor, X, Users } from "lucide-react";
+import type { Role } from "@/lib/roles";
 
-const nav = [
+const baseNav = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/escuelas", label: "Mapa", icon: Map },
   { href: "/velocidad", label: "Velocidad", icon: Zap },
@@ -18,11 +19,15 @@ interface DeviceOption {
   online: boolean;
 }
 
-export function Sidebar({ devices = [] }: { devices?: DeviceOption[] }) {
+export function Sidebar({ devices = [], userRole }: { devices?: DeviceOption[]; userRole?: Role }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const router = useRouter();
   const selectedSonda = searchParams.get("sonda");
+
+  const nav = userRole === "admin"
+    ? [...baseNav, { href: "/admin", label: "Admin", icon: Users }]
+    : baseNav;
 
   function navHref(href: string) {
     if (!selectedSonda) return href;

@@ -2,6 +2,8 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { LogOut } from "lucide-react";
+import { logout } from "@/app/actions/auth";
 
 function LiveDate() {
   const [date, setDate] = useState("");
@@ -15,7 +17,7 @@ function LiveDate() {
   );
 }
 
-export function Header() {
+export function Header({ userName }: { userName?: string }) {
   return (
     <header className="flex items-center gap-3 px-4 lg:px-6 py-2.5 z-10 border-b shrink-0" style={{ backgroundColor: "#0a1628", borderColor: "#1e3a5f" }}>
       {/* Logo oficial MINED */}
@@ -45,6 +47,20 @@ export function Header() {
           <span className="text-green-400 text-xs font-medium hidden sm:inline">Sistema Activo</span>
         </div>
         <LiveDate />
+        {userName && (
+          <div className="flex items-center gap-2">
+            <span className="text-xs hidden sm:inline" style={{ color: "#94a3b8" }}>{userName}</span>
+            <form action={logout}>
+              <button
+                type="submit"
+                className="p-1.5 rounded-md transition-colors hover:bg-white/10"
+                title="Cerrar sesión"
+              >
+                <LogOut className="w-4 h-4" style={{ color: "#94a3b8" }} />
+              </button>
+            </form>
+          </div>
+        )}
       </div>
     </header>
   );
