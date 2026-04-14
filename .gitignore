@@ -33,6 +33,9 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 
+# design source files (raw PNGs/PSDs — processed variants in public/brand/)
+/.design
+
 # vercel
 .vercel
 

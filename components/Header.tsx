@@ -191,12 +191,11 @@ export function Header({ userName, canGenerateReport, userZona, devices = [], so
       <header className="flex items-center gap-3 px-4 lg:px-6 py-2.5 z-10 border-b shrink-0" style={{ backgroundColor: "#0a1628", borderColor: "#1e3a5f" }}>
         <div className="shrink-0">
           <Image
-            src="https://upload.wikimedia.org/wikipedia/commons/0/05/Logo_oficial_del_Ministerio_de_Educaci%C3%B3n_de_El_Salvador.png"
-            alt="MINED El Salvador"
+            src="/brand/ecos-icon-128.png"
+            alt="ECOS"
             width={40}
             height={40}
             className="rounded object-contain"
-            style={{ background: "white", padding: "2px" }}
           />
         </div>
 

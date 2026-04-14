@@ -13,16 +13,13 @@ export default function LoginPage() {
         {/* Logo */}
         <div className="flex flex-col items-center mb-6">
           <Image
-            src="https://upload.wikimedia.org/wikipedia/commons/0/05/Logo_oficial_del_Ministerio_de_Educaci%C3%B3n_de_El_Salvador.png"
-            alt="MINED El Salvador"
-            width={64}
-            height={64}
-            className="rounded object-contain mb-3"
-            style={{ background: "white", padding: "4px" }}
+            src="/brand/ecos-logo-256.png"
+            alt="ECOS"
+            width={120}
+            height={120}
+            className="object-contain mb-2"
+            priority
           />
-          <h1 className="text-lg font-bold tracking-wide" style={{ color: "#1e3a5f" }}>
-            ECOS
-          </h1>
           <p className="text-xs text-gray-500">Monitoreo de Red Escolar</p>
         </div>
 
