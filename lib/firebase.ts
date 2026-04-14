@@ -1,31 +1,21 @@
-import { initializeApp, getApps, getApp, cert } from "firebase-admin/app";
-import { getFirestore, type Firestore } from "firebase-admin/firestore";
+// Tipos compartidos heredados del schema original. El backend real
+// es Postgres; ver `lib/postgres.ts` y `lib/queries.ts`.
 
-let db: Firestore | undefined;
-
-export function getDb(): Firestore {
-  if (db) return db;
-  const app = getApps().length
-    ? getApp()
-    : initializeApp({
-        credential: cert({
-          projectId: process.env.FIREBASE_PROJECT_ID,
-          clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-          privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
-        }),
-      });
-  db = getFirestore(app);
-  return db;
+// Timestamp mínimo compatible con los usos en el UI (toDate, seconds).
+export interface DbTimestamp {
+  toDate: () => Date;
+  seconds: number;
+  nanoseconds: number;
 }
 
-// Dispositivo — latest state from `dispositivos` collection
+// Dispositivo — estado actual de una sonda
 export interface Dispositivo {
-  id: string; // doc ID = CPU serial
+  id: string;
   cpu_id: string;
   id_hardware: string;
   version_sonda: string;
   online: boolean;
-  ultimo_reporte: FirebaseFirestore.Timestamp;
+  ultimo_reporte: DbTimestamp;
   download_mbps: number;
   latitud: number;
   longitud: number;
@@ -47,7 +37,7 @@ export interface Dispositivo {
   ticket_activo: boolean;
 }
 
-// Inventario — school fixed info from `Inventario_Sondas`
+// Inventario — info fija de la escuela
 export interface Escuela {
   id: string;
   nombre_escuela: string;
@@ -64,7 +54,7 @@ export interface Escuela {
   cod_ce: string;
 }
 
-// Caso (ticket) from `casos` collection
+// Caso (ticket)
 export interface Caso {
   id: string;
   id_caso: string;
@@ -72,15 +62,15 @@ export interface Caso {
   cpu_id: string;
   motivo_reporte: string;
   estado: "Abierto" | "En Proceso" | "Cerrado";
-  fecha_apertura: FirebaseFirestore.Timestamp;
+  fecha_apertura: DbTimestamp;
   tipo_ticket: string;
   comentarios: string;
   ticket_operador: string;
-  ultima_actualizacion: FirebaseFirestore.Timestamp;
+  ultima_actualizacion: DbTimestamp;
   ubicacion: string;
 }
 
-// Registro histórico from `registros` collection (same as Dispositivo + timestamp)
+// Registro histórico
 export interface RegistroHistorico {
   id: string;
   cpu_id: string;
@@ -96,5 +86,5 @@ export interface RegistroHistorico {
   ups_nivel: number;
   cpu_usage: number;
   ram_usage: number;
-  timestamp: FirebaseFirestore.Timestamp;
+  timestamp: DbTimestamp;
 }

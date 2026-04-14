@@ -1,7 +1,8 @@
 import "server-only";
-import { getDb } from "./firebase";
+import crypto from "node:crypto";
 import bcrypt from "bcryptjs";
-import type { Role } from "./auth";
+import { query } from "./postgres";
+import type { Role } from "./roles";
 
 export interface Usuario {
   id: string;
@@ -16,27 +17,149 @@ export interface Usuario {
   ultimo_login: string | null;
 }
 
-const col = () => getDb().collection("usuarios");
+type UsuarioEcosRow = {
+  id: number;
+  nombre_usuario: string;
+  clave_hash: string;
+  rol: string;
+};
+
+type UsuarioRow = {
+  id: number;
+  nombre: string;
+  correo: string;
+  cargo: string | null;
+  password_hash: string;
+  activo: boolean;
+  fecha_creacion: Date | null;
+};
+
+function normalizeRole(raw: string | null | undefined): Role {
+  const v = (raw || "").toLowerCase();
+  if (v === "admin" || v === "administrador") return "admin";
+  if (v === "supervisor") return "supervisor";
+  if (v === "operador") return "operador";
+  if (v === "tecnico" || v === "técnico" || v === "analista") return "tecnico";
+  if (v === "maestro") return "maestro";
+  return "operador";
+}
+
+function fromUsuariosEcos(r: UsuarioEcosRow): Usuario {
+  return {
+    id: `ue:${r.id}`,
+    email: r.nombre_usuario.toLowerCase(),
+    password_hash: r.clave_hash,
+    nombre: r.nombre_usuario,
+    role: normalizeRole(r.rol),
+    zona_asignada: null,
+    sonda_asignada: null,
+    activo: true,
+    creado: new Date().toISOString(),
+    ultimo_login: null,
+  };
+}
+
+function fromUsuarios(r: UsuarioRow): Usuario {
+  return {
+    id: `u:${r.id}`,
+    email: r.correo.toLowerCase(),
+    password_hash: r.password_hash,
+    nombre: r.nombre,
+    role: normalizeRole(r.cargo),
+    zona_asignada: null,
+    sonda_asignada: null,
+    activo: r.activo,
+    creado: r.fecha_creacion ? r.fecha_creacion.toISOString() : new Date().toISOString(),
+    ultimo_login: null,
+  };
+}
 
 export async function getUserByEmail(email: string): Promise<Usuario | null> {
-  const snap = await col().where("email", "==", email.toLowerCase()).limit(1).get();
-  if (snap.empty) return null;
-  const doc = snap.docs[0];
-  return { id: doc.id, ...doc.data() } as Usuario;
+  const lower = email.toLowerCase();
+  const ue = await query<UsuarioEcosRow>(
+    `SELECT id, nombre_usuario, clave_hash, rol FROM usuarios_ecos WHERE LOWER(nombre_usuario) = $1 LIMIT 1`,
+    [lower]
+  );
+  if (ue.length) return fromUsuariosEcos(ue[0]);
+  const u = await query<UsuarioRow>(
+    `SELECT id, nombre, correo, cargo, password_hash, activo, fecha_creacion
+     FROM usuarios WHERE LOWER(correo) = $1 LIMIT 1`,
+    [lower]
+  );
+  if (u.length) return fromUsuarios(u[0]);
+  return null;
 }
 
 export async function getUserById(id: string): Promise<Usuario | null> {
-  const doc = await col().doc(id).get();
-  if (!doc.exists) return null;
-  return { id: doc.id, ...doc.data() } as Usuario;
+  if (id.startsWith("ue:")) {
+    const rows = await query<UsuarioEcosRow>(
+      `SELECT id, nombre_usuario, clave_hash, rol FROM usuarios_ecos WHERE id = $1 LIMIT 1`,
+      [parseInt(id.slice(3), 10)]
+    );
+    return rows.length ? fromUsuariosEcos(rows[0]) : null;
+  }
+  if (id.startsWith("u:")) {
+    const rows = await query<UsuarioRow>(
+      `SELECT id, nombre, correo, cargo, password_hash, activo, fecha_creacion
+       FROM usuarios WHERE id = $1 LIMIT 1`,
+      [parseInt(id.slice(2), 10)]
+    );
+    return rows.length ? fromUsuarios(rows[0]) : null;
+  }
+  return null;
 }
 
 export async function getAllUsers(): Promise<Usuario[]> {
-  const snap = await col().orderBy("nombre").get();
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Usuario);
+  const ue = await query<UsuarioEcosRow>(
+    `SELECT id, nombre_usuario, clave_hash, rol FROM usuarios_ecos ORDER BY nombre_usuario`
+  );
+  const u = await query<UsuarioRow>(
+    `SELECT id, nombre, correo, cargo, password_hash, activo, fecha_creacion
+     FROM usuarios WHERE activo = true ORDER BY nombre`
+  );
+  return [...ue.map(fromUsuariosEcos), ...u.map(fromUsuarios)];
 }
 
-export async function createUser(data: {
+// Passlib PBKDF2-SHA256 adapted-base64 format: $pbkdf2-sha256$iters$salt$hash
+function verifyPbkdf2Sha256(hash: string, password: string): boolean {
+  try {
+    const parts = hash.split("$");
+    if (parts.length !== 5 || parts[1] !== "pbkdf2-sha256") return false;
+    const iters = parseInt(parts[2], 10);
+    const ab64Decode = (s: string) => {
+      const std = s.replace(/\./g, "+");
+      const pad = std.length % 4 === 0 ? "" : "=".repeat(4 - (std.length % 4));
+      return Buffer.from(std + pad, "base64");
+    };
+    const salt = ab64Decode(parts[3]);
+    const expected = ab64Decode(parts[4]);
+    const derived = crypto.pbkdf2Sync(password, salt, iters, expected.length, "sha256");
+    if (derived.length !== expected.length) return false;
+    return crypto.timingSafeEqual(derived, expected);
+  } catch {
+    return false;
+  }
+}
+
+async function verifyPassword(stored: string, password: string): Promise<boolean> {
+  if (!stored) return false;
+  if (stored.startsWith("$pbkdf2-sha256$")) return verifyPbkdf2Sha256(stored, password);
+  if (stored.startsWith("$2a$") || stored.startsWith("$2b$") || stored.startsWith("$2y$")) {
+    return bcrypt.compare(password, stored);
+  }
+  // Plaintext fallback (usuarios_ecos.clave_hash stores plain text)
+  return stored === password;
+}
+
+export async function authenticateUser(email: string, password: string): Promise<Usuario | null> {
+  const user = await getUserByEmail(email);
+  if (!user || !user.activo) return null;
+  const ok = await verifyPassword(user.password_hash, password);
+  return ok ? user : null;
+}
+
+// Admin CRUD is out of scope for the Postgres adapter demo.
+export async function createUser(_data: {
   email: string;
   password: string;
   nombre: string;
@@ -44,24 +167,12 @@ export async function createUser(data: {
   zona_asignada: string | null;
   sonda_asignada?: string | null;
 }): Promise<string> {
-  const hash = await bcrypt.hash(data.password, 10);
-  const ref = await col().add({
-    email: data.email.toLowerCase(),
-    password_hash: hash,
-    nombre: data.nombre,
-    role: data.role,
-    zona_asignada: data.zona_asignada,
-    sonda_asignada: data.sonda_asignada || null,
-    activo: true,
-    creado: new Date().toISOString(),
-    ultimo_login: null,
-  });
-  return ref.id;
+  throw new Error("createUser no disponible en modo Postgres");
 }
 
 export async function updateUser(
-  id: string,
-  data: Partial<{
+  _id: string,
+  _data: Partial<{
     email: string;
     password: string;
     nombre: string;
@@ -70,30 +181,10 @@ export async function updateUser(
     sonda_asignada: string | null;
     activo: boolean;
   }>
-) {
-  const update: Record<string, unknown> = {};
-  if (data.email !== undefined) update.email = data.email.toLowerCase();
-  if (data.nombre !== undefined) update.nombre = data.nombre;
-  if (data.role !== undefined) update.role = data.role;
-  if (data.zona_asignada !== undefined) update.zona_asignada = data.zona_asignada;
-  if (data.sonda_asignada !== undefined) update.sonda_asignada = data.sonda_asignada;
-  if (data.activo !== undefined) update.activo = data.activo;
-  if (data.password) update.password_hash = await bcrypt.hash(data.password, 10);
-  await col().doc(id).update(update);
+): Promise<void> {
+  throw new Error("updateUser no disponible en modo Postgres");
 }
 
-export async function deleteUser(id: string) {
-  await col().doc(id).delete();
-}
-
-export async function authenticateUser(
-  email: string,
-  password: string
-): Promise<Usuario | null> {
-  const user = await getUserByEmail(email);
-  if (!user || !user.activo) return null;
-  const valid = await bcrypt.compare(password, user.password_hash);
-  if (!valid) return null;
-  await col().doc(user.id).update({ ultimo_login: new Date().toISOString() });
-  return user;
+export async function deleteUser(_id: string): Promise<void> {
+  throw new Error("deleteUser no disponible en modo Postgres");
 }
