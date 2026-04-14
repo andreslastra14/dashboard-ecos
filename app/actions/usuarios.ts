@@ -34,8 +34,13 @@ export async function createUserAction(
 
   try {
     await createUser({ email, password, nombre, role, zona_asignada, sonda_asignada });
-  } catch {
-    return { error: "Error al crear usuario. Verifique que el email no esté duplicado." };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (/duplicate key|unique/i.test(msg)) {
+      return { error: "Ya existe un usuario con ese correo." };
+    }
+    console.error("createUser failed:", err);
+    return { error: `Error al crear usuario: ${msg}` };
   }
 
   redirect("/admin");
@@ -70,8 +75,10 @@ export async function updateUserAction(
       activo,
       ...(password ? { password } : {}),
     });
-  } catch {
-    return { error: "Error al actualizar usuario." };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("updateUser failed:", err);
+    return { error: `Error al actualizar usuario: ${msg}` };
   }
 
   redirect("/admin");

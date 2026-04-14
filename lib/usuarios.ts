@@ -87,8 +87,23 @@ export async function authenticateUser(email: string, password: string): Promise
   return ok ? user : null;
 }
 
-// Admin CRUD is out of scope for the Postgres adapter demo.
-export async function createUser(_data: {
+function roleToCargo(role: Role): string {
+  switch (role) {
+    case "admin": return "Administrador";
+    case "supervisor": return "Supervisor";
+    case "operador": return "Operador";
+    case "tecnico": return "Analista";
+    case "maestro": return "Maestro";
+  }
+}
+
+function normalizeId(id: string): number {
+  const numeric = id.startsWith("u:") ? parseInt(id.slice(2), 10) : parseInt(id, 10);
+  if (!Number.isFinite(numeric)) throw new Error("id invalido");
+  return numeric;
+}
+
+export async function createUser(data: {
   email: string;
   password: string;
   nombre: string;
@@ -96,12 +111,19 @@ export async function createUser(_data: {
   zona_asignada: string | null;
   sonda_asignada?: string | null;
 }): Promise<string> {
-  throw new Error("createUser no disponible en modo Postgres");
+  const hash = await bcrypt.hash(data.password, 10);
+  const rows = await query<{ id: number }>(
+    `INSERT INTO usuarios (nombre, correo, cargo, password_hash, activo, fecha_creacion)
+     VALUES ($1, $2, $3, $4, true, NOW())
+     RETURNING id`,
+    [data.nombre, data.email.toLowerCase(), roleToCargo(data.role), hash]
+  );
+  return `u:${rows[0].id}`;
 }
 
 export async function updateUser(
-  _id: string,
-  _data: Partial<{
+  id: string,
+  data: Partial<{
     email: string;
     password: string;
     nombre: string;
@@ -111,9 +133,26 @@ export async function updateUser(
     activo: boolean;
   }>
 ): Promise<void> {
-  throw new Error("updateUser no disponible en modo Postgres");
+  const numeric = normalizeId(id);
+  const sets: string[] = [];
+  const vals: unknown[] = [];
+  let i = 1;
+  if (data.email !== undefined) { sets.push(`correo = $${i++}`); vals.push(data.email.toLowerCase()); }
+  if (data.nombre !== undefined) { sets.push(`nombre = $${i++}`); vals.push(data.nombre); }
+  if (data.role !== undefined) { sets.push(`cargo = $${i++}`); vals.push(roleToCargo(data.role)); }
+  if (data.activo !== undefined) { sets.push(`activo = $${i++}`); vals.push(data.activo); }
+  if (data.password) {
+    const hash = await bcrypt.hash(data.password, 10);
+    sets.push(`password_hash = $${i++}`);
+    vals.push(hash);
+    sets.push(`fecha_ultimo_cambio_pwd = NOW()`);
+  }
+  if (sets.length === 0) return;
+  vals.push(numeric);
+  await query(`UPDATE usuarios SET ${sets.join(", ")} WHERE id = $${i}`, vals);
 }
 
-export async function deleteUser(_id: string): Promise<void> {
-  throw new Error("deleteUser no disponible en modo Postgres");
+export async function deleteUser(id: string): Promise<void> {
+  const numeric = normalizeId(id);
+  await query(`UPDATE usuarios SET activo = false WHERE id = $1`, [numeric]);
 }
