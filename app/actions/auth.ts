@@ -14,7 +14,7 @@ export async function login(
   const password = formData.get("password") as string;
 
   if (!email || !password) {
-    return { error: "Email y contraseña son requeridos." };
+    return { error: "Usuario y contraseña son requeridos." };
   }
 
   const user = await authenticateUser(email, password);
