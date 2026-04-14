@@ -8,17 +8,25 @@ type MasterRow = {
   sonda_id: string;
   eth_download: number | null;
   wifi_download: number | null;
-  velocidad_download: number | null;
+  eth_upload: number | null;
+  wifi_upload: number | null;
   latitud: number | null;
   longitud: number | null;
   gps_status: string | null;
   ups_estado: string | null;
   ups_nivel: number | null;
   cpu_temp: number | null;
+  cpu_uso: number | null;
+  ram_uso: number | null;
   eth_latencia: number | null;
   wifi_latencia: number | null;
   fecha_registro: Date;
 };
+
+const MASTER_COLS =
+  "sonda_id, eth_download, wifi_download, eth_upload, wifi_upload, " +
+  "latitud, longitud, gps_status, ups_estado, ups_nivel, cpu_temp, " +
+  "cpu_uso, ram_uso, eth_latencia, wifi_latencia, fecha_registro";
 
 function rowToDispositivo(r: MasterRow, webChecks: Map<string, Record<string, string>>): Dispositivo {
   const now = Date.now();
@@ -42,14 +50,14 @@ function rowToDispositivo(r: MasterRow, webChecks: Map<string, Record<string, st
     version_sonda: "ecos",
     online,
     ultimo_reporte,
-    download_mbps: Math.max(eth, wifi) || Number(r.velocidad_download ?? 0),
+    download_mbps: Math.max(eth, wifi),
     eth_download_mbps: eth,
     wifi_download_mbps: wifi,
     latitud: Number(r.latitud ?? 0),
     longitud: Number(r.longitud ?? 0),
     gps_status: r.gps_status ?? "SIN_SENAL",
-    cpu_usage: 0,
-    ram_usage: 0,
+    cpu_usage: Number(r.cpu_uso ?? 0),
+    ram_usage: Number(r.ram_uso ?? 0),
     disk_usage: 0,
     temp_cpu: r.cpu_temp != null ? String(r.cpu_temp) : "N/A",
     eth_latencia_ms: Number(r.eth_latencia ?? 0),
@@ -86,11 +94,7 @@ async function getLatestWebChecks(): Promise<Map<string, Record<string, string>>
 export async function getDispositivos(): Promise<Dispositivo[]> {
   try {
     const rows = await query<MasterRow>(
-      `SELECT DISTINCT ON (sonda_id)
-         sonda_id, eth_download, wifi_download, velocidad_download,
-         latitud, longitud, gps_status,
-         ups_estado, ups_nivel, cpu_temp,
-         eth_latencia, wifi_latencia, fecha_registro
+      `SELECT DISTINCT ON (sonda_id) ${MASTER_COLS}
        FROM registros_ecos_master
        ORDER BY sonda_id, fecha_registro DESC`
     );
@@ -151,7 +155,7 @@ function rowToRegistro(r: MasterRow & { id: number | string }): RegistroHistoric
   return {
     id: String(r.id),
     cpu_id: r.sonda_id,
-    download_mbps: Math.max(eth, wifi) || Number(r.velocidad_download ?? 0),
+    download_mbps: Math.max(eth, wifi),
     eth_download_mbps: eth,
     wifi_download_mbps: wifi,
     latitud: Number(r.latitud ?? 0),
@@ -163,8 +167,8 @@ function rowToRegistro(r: MasterRow & { id: number | string }): RegistroHistoric
     web_check_apuestas: online ? "BLOQUEADO" : "SIN_CONEXION",
     ups_status: r.ups_estado ?? "NORMAL",
     ups_nivel: Number(r.ups_nivel ?? 0),
-    cpu_usage: 0,
-    ram_usage: 0,
+    cpu_usage: Number(r.cpu_uso ?? 0),
+    ram_usage: Number(r.ram_uso ?? 0),
     timestamp,
   };
 }
@@ -172,9 +176,7 @@ function rowToRegistro(r: MasterRow & { id: number | string }): RegistroHistoric
 export async function getRegistrosDispositivo(cpuId: string, limite = 100): Promise<RegistroHistorico[]> {
   try {
     const rows = await query<MasterRow & { id: number }>(
-      `SELECT id, sonda_id, eth_download, wifi_download, velocidad_download,
-              latitud, longitud, gps_status, ups_estado, ups_nivel, cpu_temp,
-              eth_latencia, wifi_latencia, fecha_registro
+      `SELECT id, ${MASTER_COLS}
        FROM registros_ecos_master
        WHERE sonda_id = $1
        ORDER BY fecha_registro DESC
@@ -191,9 +193,7 @@ export async function getRegistrosDispositivo(cpuId: string, limite = 100): Prom
 export async function getRegistrosRecientes(limite = 200): Promise<RegistroHistorico[]> {
   try {
     const rows = await query<MasterRow & { id: number }>(
-      `SELECT id, sonda_id, eth_download, wifi_download, velocidad_download,
-              latitud, longitud, gps_status, ups_estado, ups_nivel, cpu_temp,
-              eth_latencia, wifi_latencia, fecha_registro
+      `SELECT id, ${MASTER_COLS}
        FROM registros_ecos_master
        ORDER BY fecha_registro DESC
        LIMIT $1`,
@@ -209,9 +209,7 @@ export async function getRegistrosRecientes(limite = 200): Promise<RegistroHisto
 export async function getRegistrosPorRango(desde: Date, hasta: Date): Promise<RegistroHistorico[]> {
   try {
     const rows = await query<MasterRow & { id: number }>(
-      `SELECT id, sonda_id, eth_download, wifi_download, velocidad_download,
-              latitud, longitud, gps_status, ups_estado, ups_nivel, cpu_temp,
-              eth_latencia, wifi_latencia, fecha_registro
+      `SELECT id, ${MASTER_COLS}
        FROM registros_ecos_master
        WHERE fecha_registro >= $1 AND fecha_registro <= $2
        ORDER BY fecha_registro DESC
