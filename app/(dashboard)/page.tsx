@@ -72,7 +72,8 @@ export default async function Home({ searchParams }: PageProps) {
   const onlineDevices = filteredDispositivos.filter((d) => d.online);
   const sondasActivas = onlineDevices.length;
 
-  const descargaPromedio = avg(onlineDevices.map((d) => d.download_mbps));
+  const ethPromedio = avg(onlineDevices.map((d) => d.eth_download_mbps));
+  const wifiPromedio = avg(onlineDevices.map((d) => d.wifi_download_mbps));
 
   const calidadRed = calcularCalidadRed(filteredDispositivos);
 
@@ -92,9 +93,15 @@ export default async function Home({ searchParams }: PageProps) {
       color: "#1e3a5f",
     },
     {
-      label: "Descarga Prom.",
-      value: descargaPromedio > 0 ? `${descargaPromedio} Mbps` : "--",
+      label: "Ethernet Prom.",
+      value: ethPromedio > 0 ? `${ethPromedio} Mbps` : "--",
       icon: Download,
+      color: "#1e3a5f",
+    },
+    {
+      label: "WiFi Prom.",
+      value: wifiPromedio > 0 ? `${wifiPromedio} Mbps` : "--",
+      icon: Wifi,
       color: "#2e6da4",
     },
     {
@@ -152,6 +159,8 @@ export default async function Home({ searchParams }: PageProps) {
       lng,
       online: d.online,
       download_mbps: d.download_mbps,
+      eth_download_mbps: d.eth_download_mbps,
+      wifi_download_mbps: d.wifi_download_mbps,
       ups_status: d.ups_status,
       web_check_mined: d.web_check_mined,
       web_check_adultos: d.web_check_adultos,
@@ -169,6 +178,8 @@ export default async function Home({ searchParams }: PageProps) {
         cpuId: cleanId,
         nombre: esc?.nombre_escuela || cleanId,
         download_mbps: d.download_mbps,
+        eth_download_mbps: d.eth_download_mbps,
+        wifi_download_mbps: d.wifi_download_mbps,
         ups_status: d.ups_status,
       };
     });
@@ -186,8 +197,8 @@ export default async function Home({ searchParams }: PageProps) {
       }
       return {
         hora,
-        descarga: r.download_mbps,
-        subida: 0, // no upload in new model
+        descarga: r.eth_download_mbps || r.download_mbps,
+        subida: r.wifi_download_mbps,
       };
     });
 
@@ -267,7 +278,7 @@ export default async function Home({ searchParams }: PageProps) {
   return (
     <div className="flex flex-col gap-4 max-w-full">
       {/* KPI row */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-7 gap-3">
         {kpis.map(({ label, value, icon, color }) => (
           <KpiCard
             key={label}
@@ -331,7 +342,8 @@ export default async function Home({ searchParams }: PageProps) {
                     </span>
                   </div>
                   <p className="text-xs text-slate-600">
-                    Ultima desc: {d.download_mbps > 0 ? `${d.download_mbps} Mbps` : "--"}
+                    Eth: {d.eth_download_mbps > 0 ? `${d.eth_download_mbps.toFixed(1)} Mbps` : "--"}
+                    {" · "}WiFi: {d.wifi_download_mbps > 0 ? `${d.wifi_download_mbps.toFixed(1)} Mbps` : "--"}
                   </p>
                   {d.ups_status && (
                     <p className="text-xs text-slate-400">UPS: {d.ups_status}</p>
@@ -350,7 +362,7 @@ export default async function Home({ searchParams }: PageProps) {
           <SystemHealthSummary data={systemHealth} />
         </div>
         <div className={CARD} style={CARD_STYLE}>
-          <p className={`${TITLE} mb-3`}>Velocidad de Descarga — Mbps</p>
+          <p className={`${TITLE} mb-3`}>Velocidad Ethernet vs WiFi — Mbps</p>
           <SpeedChart data={speedData} />
         </div>
       </div>

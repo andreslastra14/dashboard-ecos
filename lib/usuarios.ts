@@ -76,17 +76,17 @@ function fromUsuarios(r: UsuarioRow): Usuario {
 
 export async function getUserByEmail(email: string): Promise<Usuario | null> {
   const lower = email.toLowerCase();
-  const ue = await query<UsuarioEcosRow>(
-    `SELECT id, nombre_usuario, clave_hash, rol FROM usuarios_ecos WHERE LOWER(nombre_usuario) = $1 LIMIT 1`,
-    [lower]
-  );
-  if (ue.length) return fromUsuariosEcos(ue[0]);
   const u = await query<UsuarioRow>(
     `SELECT id, nombre, correo, cargo, password_hash, activo, fecha_creacion
      FROM usuarios WHERE LOWER(correo) = $1 LIMIT 1`,
     [lower]
   );
   if (u.length) return fromUsuarios(u[0]);
+  const ue = await query<UsuarioEcosRow>(
+    `SELECT id, nombre_usuario, clave_hash, rol FROM usuarios_ecos WHERE LOWER(nombre_usuario) = $1 LIMIT 1`,
+    [lower]
+  );
+  if (ue.length) return fromUsuariosEcos(ue[0]);
   return null;
 }
 

@@ -51,6 +51,8 @@ export default async function EscuelasPage({
       lng,
       online: d.online,
       download_mbps: d.download_mbps ?? 0,
+      eth_download_mbps: d.eth_download_mbps ?? 0,
+      wifi_download_mbps: d.wifi_download_mbps ?? 0,
       ups_status: d.ups_status ?? "—",
       ups_nivel: d.ups_nivel ?? 0,
       web_check_mined: d.web_check_mined ?? "—",
@@ -99,6 +101,8 @@ export default async function EscuelasPage({
     lng: s.lng,
     online: s.online,
     download_mbps: s.download_mbps,
+    eth_download_mbps: s.eth_download_mbps,
+    wifi_download_mbps: s.wifi_download_mbps,
     ups_status: s.ups_status,
     web_check_mined: s.web_check_mined,
     web_check_adultos: "",
@@ -158,7 +162,8 @@ export default async function EscuelasPage({
                   <th className="px-4 py-3">Escuela</th>
                   <th className="px-4 py-3">Serial</th>
                   <th className="px-4 py-3">Estado</th>
-                  <th className="px-4 py-3">Descarga</th>
+                  <th className="px-4 py-3">Ethernet</th>
+                  <th className="px-4 py-3">WiFi</th>
                   <th className="px-4 py-3">UPS</th>
                   <th className="px-4 py-3">Filtro</th>
                 </tr>
@@ -176,7 +181,8 @@ export default async function EscuelasPage({
                         {s.online ? "Online" : "Offline"}
                       </Badge>
                     </td>
-                    <td className="px-4 py-3">{s.download_mbps} Mbps</td>
+                    <td className="px-4 py-3">{s.eth_download_mbps > 0 ? `${s.eth_download_mbps.toFixed(1)} Mbps` : "—"}</td>
+                    <td className="px-4 py-3">{s.wifi_download_mbps > 0 ? `${s.wifi_download_mbps.toFixed(1)} Mbps` : "—"}</td>
                     <td className="px-4 py-3">
                       <span className={`text-xs font-medium ${s.ups_status === "CONECTADA" ? "text-green-700" : "text-gray-500"}`}>
                         {s.ups_status} {s.ups_nivel > 0 ? `(${s.ups_nivel}%)` : ""}

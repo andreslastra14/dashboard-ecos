@@ -42,8 +42,8 @@ export function SpeedChart({ data, dark }: { data: DataPoint[]; dark?: boolean }
           formatter={(v, name) => [`${v} Mbps`, name]}
         />
         <Legend wrapperStyle={{ fontSize: 11 }} />
-        <Area type="monotone" dataKey="descarga" stroke="#1e3a5f" fill={`url(#${gradDesc})`} strokeWidth={2} name="Descarga" />
-        <Area type="monotone" dataKey="subida" stroke="#2e6da4" fill={`url(#${gradSub})`} strokeWidth={2} name="Subida" strokeDasharray="4 2" />
+        <Area type="monotone" dataKey="descarga" stroke="#1e3a5f" fill={`url(#${gradDesc})`} strokeWidth={2} name="Ethernet" />
+        <Area type="monotone" dataKey="subida" stroke="#2e6da4" fill={`url(#${gradSub})`} strokeWidth={2} name="WiFi" strokeDasharray="4 2" />
       </AreaChart>
     </ResponsiveContainer>
   );

@@ -26,6 +26,8 @@ export default async function VelocidadPage({ searchParams }: PageProps) {
       label: esc?.nombre_escuela || cleanId,
       online: d.online,
       download_mbps: d.download_mbps,
+      eth_download_mbps: d.eth_download_mbps,
+      wifi_download_mbps: d.wifi_download_mbps,
     };
   });
 
@@ -48,8 +50,8 @@ export default async function VelocidadPage({ searchParams }: PageProps) {
     }
     return {
       hora,
-      descarga: r.download_mbps,
-      subida: 0,
+      descarga: r.eth_download_mbps || r.download_mbps,
+      subida: r.wifi_download_mbps,
     };
   });
 
@@ -132,7 +134,8 @@ export default async function VelocidadPage({ searchParams }: PageProps) {
                   <tr className="border-b border-gray-100 text-left text-xs text-gray-500 uppercase tracking-wide">
                     <th className="px-4 py-3">Escuela</th>
                     <th className="px-4 py-3">Estado</th>
-                    <th className="px-4 py-3">Vel. Actual</th>
+                    <th className="px-4 py-3">Ethernet Actual</th>
+                    <th className="px-4 py-3">WiFi Actual</th>
                     <th className="px-4 py-3">Max. Historica</th>
                     <th className="px-4 py-3">Prom. Historica</th>
                     <th className="px-4 py-3">Registros</th>
@@ -150,7 +153,8 @@ export default async function VelocidadPage({ searchParams }: PageProps) {
                             {d.online ? "Online" : "Offline"}
                           </span>
                         </td>
-                        <td className="px-4 py-2.5 font-medium">{d.download_mbps > 0 ? `${d.download_mbps.toFixed(1)} Mbps` : "—"}</td>
+                        <td className="px-4 py-2.5 font-medium">{d.eth_download_mbps > 0 ? `${d.eth_download_mbps.toFixed(1)} Mbps` : "—"}</td>
+                        <td className="px-4 py-2.5 font-medium">{d.wifi_download_mbps > 0 ? `${d.wifi_download_mbps.toFixed(1)} Mbps` : "—"}</td>
                         <td className="px-4 py-2.5">{stats?.max ? `${stats.max.toFixed(1)} Mbps` : "—"}</td>
                         <td className="px-4 py-2.5">{stats?.total ? `${(stats.sum / stats.total).toFixed(1)} Mbps` : "—"}</td>
                         <td className="px-4 py-2.5 text-gray-500">{stats?.records ?? 0}</td>
@@ -176,7 +180,8 @@ export default async function VelocidadPage({ searchParams }: PageProps) {
                 <tr className="border-b border-gray-100 text-left text-xs text-gray-500 uppercase tracking-wide">
                   {!sondaParam && <th className="px-4 py-3">Dispositivo</th>}
                   <th className="px-4 py-3">Fecha</th>
-                  <th className="px-4 py-3">Descarga (Mbps)</th>
+                  <th className="px-4 py-3">Ethernet (Mbps)</th>
+                  <th className="px-4 py-3">WiFi (Mbps)</th>
                   <th className="px-4 py-3">Estado</th>
                 </tr>
               </thead>
@@ -199,7 +204,8 @@ export default async function VelocidadPage({ searchParams }: PageProps) {
                     <tr key={r.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
                       {!sondaParam && <td className="px-4 py-2.5 text-gray-600 text-xs">{dev?.label || r.cpu_id}</td>}
                       <td className="px-4 py-2.5 text-gray-600">{fecha}</td>
-                      <td className="px-4 py-2.5 font-medium">{r.download_mbps > 0 ? r.download_mbps.toFixed(1) : "0"}</td>
+                      <td className="px-4 py-2.5 font-medium">{r.eth_download_mbps > 0 ? r.eth_download_mbps.toFixed(1) : "—"}</td>
+                      <td className="px-4 py-2.5 font-medium">{r.wifi_download_mbps > 0 ? r.wifi_download_mbps.toFixed(1) : "—"}</td>
                       <td className="px-4 py-2.5">
                         <span className={`inline-flex items-center gap-1 text-xs ${r.online ? "text-green-600" : "text-red-500"}`}>
                           <span className={`w-2 h-2 rounded-full ${r.online ? "bg-green-500" : "bg-red-500"}`} />
@@ -211,7 +217,7 @@ export default async function VelocidadPage({ searchParams }: PageProps) {
                 })}
                 {filteredRegistros.length === 0 && (
                   <tr>
-                    <td colSpan={sondaParam ? 3 : 4} className="px-4 py-8 text-center text-gray-400">Sin registros</td>
+                    <td colSpan={sondaParam ? 4 : 5} className="px-4 py-8 text-center text-gray-400">Sin registros</td>
                   </tr>
                 )}
               </tbody>

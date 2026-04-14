@@ -33,6 +33,8 @@ function rowToDispositivo(r: MasterRow, webChecks: Map<string, Record<string, st
     nanoseconds,
   } as import("./firebase").DbTimestamp;
 
+  const eth = Number(r.eth_download ?? 0);
+  const wifi = Number(r.wifi_download ?? 0);
   return {
     id: r.sonda_id,
     cpu_id: r.sonda_id,
@@ -40,7 +42,9 @@ function rowToDispositivo(r: MasterRow, webChecks: Map<string, Record<string, st
     version_sonda: "ecos",
     online,
     ultimo_reporte,
-    download_mbps: Number(r.eth_download ?? r.velocidad_download ?? 0),
+    download_mbps: Math.max(eth, wifi) || Number(r.velocidad_download ?? 0),
+    eth_download_mbps: eth,
+    wifi_download_mbps: wifi,
     latitud: Number(r.latitud ?? 0),
     longitud: Number(r.longitud ?? 0),
     gps_status: r.gps_status ?? "SIN_SENAL",
@@ -140,10 +144,14 @@ function rowToRegistro(r: MasterRow & { id: number | string }): RegistroHistoric
     nanoseconds: (ts % 1000) * 1_000_000,
   } as import("./firebase").DbTimestamp;
 
+  const eth = Number(r.eth_download ?? 0);
+  const wifi = Number(r.wifi_download ?? 0);
   return {
     id: String(r.id),
     cpu_id: r.sonda_id,
-    download_mbps: Number(r.eth_download ?? r.velocidad_download ?? 0),
+    download_mbps: Math.max(eth, wifi) || Number(r.velocidad_download ?? 0),
+    eth_download_mbps: eth,
+    wifi_download_mbps: wifi,
     latitud: Number(r.latitud ?? 0),
     longitud: Number(r.longitud ?? 0),
     online,

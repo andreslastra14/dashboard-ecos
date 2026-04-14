@@ -17,6 +17,8 @@ export interface Dispositivo {
   online: boolean;
   ultimo_reporte: DbTimestamp;
   download_mbps: number;
+  eth_download_mbps: number;
+  wifi_download_mbps: number;
   latitud: number;
   longitud: number;
   gps_status: string;
@@ -75,6 +77,8 @@ export interface RegistroHistorico {
   id: string;
   cpu_id: string;
   download_mbps: number;
+  eth_download_mbps: number;
+  wifi_download_mbps: number;
   latitud: number;
   longitud: number;
   online: boolean;

@@ -10,6 +10,8 @@ export interface MapMarker {
   lng: number;
   online: boolean;
   download_mbps: number;
+  eth_download_mbps?: number;
+  wifi_download_mbps?: number;
   ups_status: string;
   web_check_mined: string;
   web_check_adultos: string;
@@ -62,7 +64,8 @@ export function SchoolMap({
               <div style={{ fontSize: 12, minWidth: 180 }}>
                 <p style={{ fontWeight: 700, marginBottom: 4 }}>{m.nombre}</p>
                 <p>Estado: <strong style={{ color }}>{m.online ? "En linea" : "Desconectado"}</strong></p>
-                <p>Descarga: {m.download_mbps > 0 ? `${m.download_mbps} Mbps` : "—"}</p>
+                <p>Ethernet: {(m.eth_download_mbps ?? 0) > 0 ? `${m.eth_download_mbps!.toFixed(1)} Mbps` : "—"}</p>
+                <p>WiFi: {(m.wifi_download_mbps ?? 0) > 0 ? `${m.wifi_download_mbps!.toFixed(1)} Mbps` : "—"}</p>
                 <p>MINED: {m.web_check_mined === "ACCESIBLE" ? "Accesible" : "Bloqueado"}</p>
                 <p>Filtro: {m.web_check_adultos === "BLOQUEADO" ? "Activo" : "Inactivo"}</p>
                 {m.ups_status && <p>UPS: {m.ups_status}</p>}
