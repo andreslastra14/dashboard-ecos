@@ -1,5 +1,4 @@
 import "server-only";
-import crypto from "node:crypto";
 import bcrypt from "bcryptjs";
 import { query } from "./postgres";
 import type { Role } from "./roles";
@@ -16,13 +15,6 @@ export interface Usuario {
   creado: string;
   ultimo_login: string | null;
 }
-
-type UsuarioEcosRow = {
-  id: number;
-  nombre_usuario: string;
-  clave_hash: string;
-  rol: string;
-};
 
 type UsuarioRow = {
   id: number;
@@ -42,21 +34,6 @@ function normalizeRole(raw: string | null | undefined): Role {
   if (v === "tecnico" || v === "técnico" || v === "analista") return "tecnico";
   if (v === "maestro") return "maestro";
   return "operador";
-}
-
-function fromUsuariosEcos(r: UsuarioEcosRow): Usuario {
-  return {
-    id: `ue:${r.id}`,
-    email: r.nombre_usuario.toLowerCase(),
-    password_hash: r.clave_hash,
-    nombre: r.nombre_usuario,
-    role: normalizeRole(r.rol),
-    zona_asignada: null,
-    sonda_asignada: null,
-    activo: true,
-    creado: new Date().toISOString(),
-    ultimo_login: null,
-  };
 }
 
 function fromUsuarios(r: UsuarioRow): Usuario {
@@ -81,80 +58,32 @@ export async function getUserByEmail(email: string): Promise<Usuario | null> {
      FROM usuarios WHERE LOWER(correo) = $1 LIMIT 1`,
     [lower]
   );
-  if (u.length) return fromUsuarios(u[0]);
-  const ue = await query<UsuarioEcosRow>(
-    `SELECT id, nombre_usuario, clave_hash, rol FROM usuarios_ecos WHERE LOWER(nombre_usuario) = $1 LIMIT 1`,
-    [lower]
-  );
-  if (ue.length) return fromUsuariosEcos(ue[0]);
-  return null;
+  return u.length ? fromUsuarios(u[0]) : null;
 }
 
 export async function getUserById(id: string): Promise<Usuario | null> {
-  if (id.startsWith("ue:")) {
-    const rows = await query<UsuarioEcosRow>(
-      `SELECT id, nombre_usuario, clave_hash, rol FROM usuarios_ecos WHERE id = $1 LIMIT 1`,
-      [parseInt(id.slice(3), 10)]
-    );
-    return rows.length ? fromUsuariosEcos(rows[0]) : null;
-  }
-  if (id.startsWith("u:")) {
-    const rows = await query<UsuarioRow>(
-      `SELECT id, nombre, correo, cargo, password_hash, activo, fecha_creacion
-       FROM usuarios WHERE id = $1 LIMIT 1`,
-      [parseInt(id.slice(2), 10)]
-    );
-    return rows.length ? fromUsuarios(rows[0]) : null;
-  }
-  return null;
+  const numeric = id.startsWith("u:") ? parseInt(id.slice(2), 10) : parseInt(id, 10);
+  if (!Number.isFinite(numeric)) return null;
+  const rows = await query<UsuarioRow>(
+    `SELECT id, nombre, correo, cargo, password_hash, activo, fecha_creacion
+     FROM usuarios WHERE id = $1 LIMIT 1`,
+    [numeric]
+  );
+  return rows.length ? fromUsuarios(rows[0]) : null;
 }
 
 export async function getAllUsers(): Promise<Usuario[]> {
-  const ue = await query<UsuarioEcosRow>(
-    `SELECT id, nombre_usuario, clave_hash, rol FROM usuarios_ecos ORDER BY nombre_usuario`
-  );
   const u = await query<UsuarioRow>(
     `SELECT id, nombre, correo, cargo, password_hash, activo, fecha_creacion
      FROM usuarios WHERE activo = true ORDER BY nombre`
   );
-  return [...ue.map(fromUsuariosEcos), ...u.map(fromUsuarios)];
-}
-
-// Passlib PBKDF2-SHA256 adapted-base64 format: $pbkdf2-sha256$iters$salt$hash
-function verifyPbkdf2Sha256(hash: string, password: string): boolean {
-  try {
-    const parts = hash.split("$");
-    if (parts.length !== 5 || parts[1] !== "pbkdf2-sha256") return false;
-    const iters = parseInt(parts[2], 10);
-    const ab64Decode = (s: string) => {
-      const std = s.replace(/\./g, "+");
-      const pad = std.length % 4 === 0 ? "" : "=".repeat(4 - (std.length % 4));
-      return Buffer.from(std + pad, "base64");
-    };
-    const salt = ab64Decode(parts[3]);
-    const expected = ab64Decode(parts[4]);
-    const derived = crypto.pbkdf2Sync(password, salt, iters, expected.length, "sha256");
-    if (derived.length !== expected.length) return false;
-    return crypto.timingSafeEqual(derived, expected);
-  } catch {
-    return false;
-  }
-}
-
-async function verifyPassword(stored: string, password: string): Promise<boolean> {
-  if (!stored) return false;
-  if (stored.startsWith("$pbkdf2-sha256$")) return verifyPbkdf2Sha256(stored, password);
-  if (stored.startsWith("$2a$") || stored.startsWith("$2b$") || stored.startsWith("$2y$")) {
-    return bcrypt.compare(password, stored);
-  }
-  // Plaintext fallback (usuarios_ecos.clave_hash stores plain text)
-  return stored === password;
+  return u.map(fromUsuarios);
 }
 
 export async function authenticateUser(email: string, password: string): Promise<Usuario | null> {
   const user = await getUserByEmail(email);
-  if (!user || !user.activo) return null;
-  const ok = await verifyPassword(user.password_hash, password);
+  if (!user || !user.activo || !user.password_hash) return null;
+  const ok = await bcrypt.compare(password, user.password_hash);
   return ok ? user : null;
 }
 
