@@ -26,6 +26,8 @@ export interface Dispositivo {
   ram_usage: number;
   disk_usage: number;
   temp_cpu: string;
+  eth_latencia_ms: number;
+  wifi_latencia_ms: number;
   web_check_mined: string;
   web_check_streaming: string;
   web_check_adultos: string;

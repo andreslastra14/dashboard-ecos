@@ -205,15 +205,15 @@ export default async function Home({ searchParams }: PageProps) {
   // ── System health summary ─────────────────────────────────
   const onlineForHealth = filteredDispositivos.filter((d) => d.online);
   const systemHealth: SystemHealthData = {
-    avgCpu: avg(onlineForHealth.map((d) => d.cpu_usage)),
-    avgRam: avg(onlineForHealth.map((d) => d.ram_usage)),
-    avgDisk: avg(onlineForHealth.map((d) => d.disk_usage)),
     avgTemp: avg(onlineForHealth.map((d) => parseTemp(d.temp_cpu))),
+    avgUpsNivel: avg(onlineForHealth.map((d) => d.ups_nivel)),
+    avgEthLatencia: avg(onlineForHealth.filter((d) => d.eth_latencia_ms > 0).map((d) => d.eth_latencia_ms)),
+    avgWifiLatencia: avg(onlineForHealth.filter((d) => d.wifi_latencia_ms > 0).map((d) => d.wifi_latencia_ms)),
     totalDevices: onlineForHealth.length,
-    highCpu: onlineForHealth.filter((d) => d.cpu_usage > 80).length,
-    highRam: onlineForHealth.filter((d) => d.ram_usage > 80).length,
-    highDisk: onlineForHealth.filter((d) => d.disk_usage > 80).length,
     highTemp: onlineForHealth.filter((d) => parseTemp(d.temp_cpu) > 70).length,
+    lowUps: onlineForHealth.filter((d) => d.ups_nivel > 0 && d.ups_nivel < 30).length,
+    highEthLatencia: onlineForHealth.filter((d) => d.eth_latencia_ms > 200).length,
+    highWifiLatencia: onlineForHealth.filter((d) => d.wifi_latencia_ms > 200).length,
   };
 
   // ── Insights ──────────────────────────────────────────────

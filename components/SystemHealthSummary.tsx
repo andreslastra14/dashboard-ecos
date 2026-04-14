@@ -1,29 +1,34 @@
 "use client";
 
-import { Cpu, HardDrive, Thermometer, MemoryStick } from "lucide-react";
+import { Thermometer, BatteryFull, Network, Wifi } from "lucide-react";
 
 export interface SystemHealthData {
-  avgCpu: number;
-  avgRam: number;
-  avgDisk: number;
   avgTemp: number;
+  avgUpsNivel: number;
+  avgEthLatencia: number;
+  avgWifiLatencia: number;
   totalDevices: number;
-  highCpu: number;   // devices with cpu > 80%
-  highRam: number;    // devices with ram > 80%
-  highDisk: number;   // devices with disk > 80%
-  highTemp: number;   // devices with temp > 70C
+  highTemp: number;
+  lowUps: number;
+  highEthLatencia: number;
+  highWifiLatencia: number;
 }
 
-function HealthBar({ label, value, icon: Icon, threshold, count, total }: {
+function HealthBar({ label, value, unit, icon: Icon, max, threshold, alert, count, total }: {
   label: string;
   value: number;
+  unit: string;
   icon: React.ElementType;
+  max: number;
   threshold: number;
+  alert: "above" | "below";
   count: number;
   total: number;
 }) {
-  const pct = Math.min(value, 100);
-  const color = value > threshold ? "#b91c1c" : value > threshold * 0.8 ? "#d97706" : "#1e3a5f";
+  const pct = Math.min((value / max) * 100, 100);
+  const triggered = alert === "above" ? value > threshold : value < threshold && value > 0;
+  const warning = alert === "above" ? value > threshold * 0.8 : value < threshold * 1.2 && value > 0;
+  const color = triggered ? "#b91c1c" : warning ? "#d97706" : "#1e3a5f";
 
   return (
     <div className="flex items-center gap-3">
@@ -36,7 +41,9 @@ function HealthBar({ label, value, icon: Icon, threshold, count, total }: {
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between mb-1">
           <p className="text-xs font-semibold text-slate-600">{label}</p>
-          <p className="text-xs font-mono font-bold" style={{ color }}>{value}%</p>
+          <p className="text-xs font-mono font-bold" style={{ color }}>
+            {value > 0 ? `${value.toFixed(1)} ${unit}` : "—"}
+          </p>
         </div>
         <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
           <div
@@ -55,10 +62,10 @@ function HealthBar({ label, value, icon: Icon, threshold, count, total }: {
 export function SystemHealthSummary({ data }: { data: SystemHealthData }) {
   return (
     <div className="flex flex-col gap-4">
-      <HealthBar label="CPU Promedio" value={data.avgCpu} icon={Cpu} threshold={80} count={data.highCpu} total={data.totalDevices} />
-      <HealthBar label="RAM Promedio" value={data.avgRam} icon={MemoryStick} threshold={80} count={data.highRam} total={data.totalDevices} />
-      <HealthBar label="Disco Promedio" value={data.avgDisk} icon={HardDrive} threshold={80} count={data.highDisk} total={data.totalDevices} />
-      <HealthBar label="Temp. CPU Prom." value={data.avgTemp} icon={Thermometer} threshold={70} count={data.highTemp} total={data.totalDevices} />
+      <HealthBar label="Temp. CPU Prom." value={data.avgTemp} unit="°C" icon={Thermometer} max={100} threshold={70} alert="above" count={data.highTemp} total={data.totalDevices} />
+      <HealthBar label="Batería UPS Prom." value={data.avgUpsNivel} unit="%" icon={BatteryFull} max={100} threshold={30} alert="below" count={data.lowUps} total={data.totalDevices} />
+      <HealthBar label="Latencia Ethernet" value={data.avgEthLatencia} unit="ms" icon={Network} max={500} threshold={200} alert="above" count={data.highEthLatencia} total={data.totalDevices} />
+      <HealthBar label="Latencia WiFi" value={data.avgWifiLatencia} unit="ms" icon={Wifi} max={500} threshold={200} alert="above" count={data.highWifiLatencia} total={data.totalDevices} />
     </div>
   );
 }

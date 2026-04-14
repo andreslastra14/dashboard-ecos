@@ -52,6 +52,8 @@ function rowToDispositivo(r: MasterRow, webChecks: Map<string, Record<string, st
     ram_usage: 0,
     disk_usage: 0,
     temp_cpu: r.cpu_temp != null ? String(r.cpu_temp) : "N/A",
+    eth_latencia_ms: Number(r.eth_latencia ?? 0),
+    wifi_latencia_ms: Number(r.wifi_latencia ?? 0),
     web_check_mined: checks.MINED ?? (online ? "ACCESIBLE" : "SIN_CONEXION"),
     web_check_streaming: checks.Netflix ?? checks.STREAMING ?? (online ? "ACCESIBLE" : "SIN_CONEXION"),
     web_check_adultos: checks.Adultos ?? checks.ADULTOS ?? (online ? "BLOQUEADO" : "SIN_CONEXION"),
