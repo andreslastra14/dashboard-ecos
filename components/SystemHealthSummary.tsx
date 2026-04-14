@@ -1,13 +1,17 @@
 "use client";
 
-import { Thermometer, BatteryFull, Network, Wifi } from "lucide-react";
+import { Cpu, MemoryStick, Thermometer, BatteryFull, Network, Wifi } from "lucide-react";
 
 export interface SystemHealthData {
+  avgCpu: number;
+  avgRam: number;
   avgTemp: number;
   avgUpsNivel: number;
   avgEthLatencia: number;
   avgWifiLatencia: number;
   totalDevices: number;
+  highCpu: number;
+  highRam: number;
   highTemp: number;
   lowUps: number;
   highEthLatencia: number;
@@ -61,7 +65,9 @@ function HealthBar({ label, value, unit, icon: Icon, max, threshold, alert, coun
 
 export function SystemHealthSummary({ data }: { data: SystemHealthData }) {
   return (
-    <div className="flex flex-col gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+      <HealthBar label="CPU Promedio" value={data.avgCpu} unit="%" icon={Cpu} max={100} threshold={80} alert="above" count={data.highCpu} total={data.totalDevices} />
+      <HealthBar label="RAM Promedio" value={data.avgRam} unit="%" icon={MemoryStick} max={100} threshold={80} alert="above" count={data.highRam} total={data.totalDevices} />
       <HealthBar label="Temp. CPU Prom." value={data.avgTemp} unit="°C" icon={Thermometer} max={100} threshold={70} alert="above" count={data.highTemp} total={data.totalDevices} />
       <HealthBar label="Batería UPS Prom." value={data.avgUpsNivel} unit="%" icon={BatteryFull} max={100} threshold={30} alert="below" count={data.lowUps} total={data.totalDevices} />
       <HealthBar label="Latencia Ethernet" value={data.avgEthLatencia} unit="ms" icon={Network} max={500} threshold={200} alert="above" count={data.highEthLatencia} total={data.totalDevices} />
