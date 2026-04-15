@@ -33,14 +33,13 @@ async function createPool(): Promise<Pool> {
   const clientOpts = await connector.getOptions({
     instanceConnectionName,
     ipType: IpAddressTypes.PUBLIC,
-    authType: AuthTypes.PASSWORD,
+    authType: AuthTypes.IAM,
   });
 
   return new Pool({
     ...clientOpts,
     database: process.env.DB_NAME,
     user: process.env.DB_USER,
-    password: process.env.DB_PASS,
     max: 3,
     idleTimeoutMillis: 30_000,
     connectionTimeoutMillis: 10_000,
