@@ -28,6 +28,11 @@ async function createPool(): Promise<Pool> {
     scopes: ["https://www.googleapis.com/auth/cloud-platform"],
   });
 
+  const loginAuth = new GoogleAuth({
+    credentials: getCredentials(),
+    scopes: ["https://www.googleapis.com/auth/sqlservice.login"],
+  });
+
   const connector = new Connector({ auth });
 
   const clientOpts = await connector.getOptions({
@@ -36,7 +41,7 @@ async function createPool(): Promise<Pool> {
     authType: AuthTypes.IAM,
   });
 
-  const authClient = await auth.getClient();
+  const authClient = await loginAuth.getClient();
   const tokenRes = await authClient.getAccessToken();
   const token = typeof tokenRes === "string" ? tokenRes : tokenRes.token;
   if (!token) throw new Error("Failed to obtain IAM access token");
