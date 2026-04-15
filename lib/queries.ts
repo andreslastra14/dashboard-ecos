@@ -96,6 +96,7 @@ export async function getDispositivos(): Promise<Dispositivo[]> {
     const rows = await query<MasterRow>(
       `SELECT DISTINCT ON (sonda_id) ${MASTER_COLS}
        FROM registros_ecos_master
+       WHERE sonda_id IS NOT NULL
        ORDER BY sonda_id, fecha_registro DESC`
     );
     const webChecks = await getLatestWebChecks();
@@ -114,6 +115,7 @@ export async function getEscuelas(): Promise<Record<string, Escuela>> {
     const rows = await query<{ sonda_id: string; latitud: number | null; longitud: number | null }>(
       `SELECT DISTINCT ON (sonda_id) sonda_id, latitud, longitud
        FROM registros_ecos_master
+       WHERE sonda_id IS NOT NULL
        ORDER BY sonda_id, fecha_registro DESC`
     );
     const map: Record<string, Escuela> = {};
