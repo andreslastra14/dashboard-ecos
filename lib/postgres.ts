@@ -36,10 +36,16 @@ async function createPool(): Promise<Pool> {
     authType: AuthTypes.IAM,
   });
 
+  const authClient = await auth.getClient();
+  const tokenRes = await authClient.getAccessToken();
+  const token = typeof tokenRes === "string" ? tokenRes : tokenRes.token;
+  if (!token) throw new Error("Failed to obtain IAM access token");
+
   return new Pool({
     ...clientOpts,
     database: process.env.DB_NAME,
     user: process.env.DB_USER,
+    password: token,
     max: 3,
     idleTimeoutMillis: 30_000,
     connectionTimeoutMillis: 10_000,
