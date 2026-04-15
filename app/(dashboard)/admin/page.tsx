@@ -129,7 +129,7 @@ export default async function AdminPage() {
                 <td className="px-4 py-3 text-right">
                   <div className="flex items-center justify-end gap-1">
                     <Link
-                      href={`/admin/${encodeURIComponent(u.id)}/editar`}
+                      href={`/admin/${u.id.replace(/^u:/, "")}/editar`}
                       className="p-1.5 rounded-md hover:bg-gray-100 transition-colors text-gray-500 hover:text-gray-700"
                       title="Editar"
                     >
