@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { login, type LoginState } from "@/app/actions/auth";
 import Image from "next/image";
+import Link from "next/link";
 
 export default function LoginPage() {
   const [state, formAction, pending] = useActionState<LoginState, FormData>(login, undefined);
@@ -65,6 +66,13 @@ export default function LoginPage() {
           >
             {pending ? "Ingresando..." : "Ingresar"}
           </button>
+
+          <Link
+            href="/login/recuperar"
+            className="text-center text-sm text-gray-500 hover:text-gray-700"
+          >
+            ¿Olvidaste tu contraseña?
+          </Link>
         </form>
 
         <p className="text-center text-xs text-gray-400 mt-6">

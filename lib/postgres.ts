@@ -1,20 +1,55 @@
 import "server-only";
 import { Pool } from "pg";
+import { Connector, IpAddressTypes, AuthTypes } from "@google-cloud/cloud-sql-connector";
+import { GoogleAuth } from "google-auth-library";
 
 let pool: Pool | undefined;
 
-export function getPool(): Pool {
-  if (pool) return pool;
-  pool = new Pool({
-    host: process.env.DB_HOST,
+function getCredentials(): Record<string, unknown> {
+  const raw = process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON;
+  if (!raw) {
+    throw new Error("GOOGLE_APPLICATION_CREDENTIALS_JSON is not set");
+  }
+  try {
+    return JSON.parse(raw);
+  } catch {
+    throw new Error("GOOGLE_APPLICATION_CREDENTIALS_JSON is not valid JSON");
+  }
+}
+
+async function createPool(): Promise<Pool> {
+  const instanceConnectionName = process.env.INSTANCE_CONNECTION_NAME;
+  if (!instanceConnectionName) {
+    throw new Error("INSTANCE_CONNECTION_NAME is not set");
+  }
+
+  const auth = new GoogleAuth({
+    credentials: getCredentials(),
+    scopes: ["https://www.googleapis.com/auth/cloud-platform"],
+  });
+
+  const connector = new Connector({ auth });
+
+  const clientOpts = await connector.getOptions({
+    instanceConnectionName,
+    ipType: IpAddressTypes.PUBLIC,
+    authType: AuthTypes.PASSWORD,
+  });
+
+  return new Pool({
+    ...clientOpts,
     database: process.env.DB_NAME,
     user: process.env.DB_USER,
     password: process.env.DB_PASS,
-    port: parseInt(process.env.DB_PORT || "5432", 10),
     max: 3,
     idleTimeoutMillis: 30_000,
     connectionTimeoutMillis: 10_000,
   });
+}
+
+async function getPool(): Promise<Pool> {
+  if (pool) return pool;
+  pool = await createPool();
   return pool;
 }
 
@@ -22,6 +57,7 @@ export async function query<T extends Record<string, unknown> = Record<string, u
   text: string,
   params?: unknown[]
 ): Promise<T[]> {
-  const res = await getPool().query(text, params);
+  const p = await getPool();
+  const res = await p.query(text, params);
   return res.rows as T[];
 }
