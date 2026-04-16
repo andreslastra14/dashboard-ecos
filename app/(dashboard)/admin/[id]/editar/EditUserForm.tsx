@@ -2,16 +2,10 @@
 
 import { useActionState } from "react";
 import { updateUserAction, type UserFormState } from "@/app/actions/usuarios";
-import { DEPARTAMENTOS } from "@/lib/geo";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import type { Role } from "@/lib/roles";
-
-interface DeviceOption {
-  id: string;
-  nombre: string;
-}
 
 interface Props {
   user: {
@@ -19,26 +13,12 @@ interface Props {
     email: string;
     nombre: string;
     role: Role;
-    zona_asignada: string | null;
-    sonda_asignada: string | null;
-    activo: boolean;
   };
 }
 
 export default function EditUserForm({ user }: Props) {
   const [state, formAction, pending] = useActionState<UserFormState, FormData>(updateUserAction, undefined);
   const [role, setRole] = useState(user.role);
-  const [activo, setActivo] = useState(user.activo);
-  const [devices, setDevices] = useState<DeviceOption[]>([]);
-
-  useEffect(() => {
-    if (role === "maestro") {
-      fetch("/api/dispositivos/lista")
-        .then((r) => r.json())
-        .then((d) => setDevices(d))
-        .catch(() => setDevices([]));
-    }
-  }, [role]);
 
   return (
     <div className="max-w-lg mx-auto space-y-6">
@@ -52,17 +32,10 @@ export default function EditUserForm({ user }: Props) {
       <div className="rounded-xl border border-gray-100 bg-white shadow-sm p-6">
         <form action={formAction} className="flex flex-col gap-4">
           <input type="hidden" name="id" value={user.id} />
-          <input type="hidden" name="activo" value={String(activo)} />
 
           <div>
-            <label htmlFor="nombre" className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
-            <input id="nombre" name="nombre" required defaultValue={user.nombre}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
-          </div>
-
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Correo electrónico</label>
-            <input id="email" name="email" type="email" required defaultValue={user.email}
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Usuario (login)</label>
+            <input id="email" name="email" type="text" required defaultValue={user.email}
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
           </div>
 
@@ -82,54 +55,15 @@ export default function EditUserForm({ user }: Props) {
               <option value="supervisor">Supervisor</option>
               <option value="operador">Operador</option>
               <option value="tecnico">Técnico</option>
-              <option value="maestro">Maestro</option>
             </select>
-          </div>
-
-          {role === "supervisor" && (
-            <div>
-              <label htmlFor="zona_asignada" className="block text-sm font-medium text-gray-700 mb-1">Zona Asignada</label>
-              <select id="zona_asignada" name="zona_asignada" required defaultValue={user.zona_asignada || ""}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                <option value="">Seleccionar departamento...</option>
-                {DEPARTAMENTOS.map((d) => (
-                  <option key={d.nombre} value={d.nombre}>{d.nombre}</option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          {role === "maestro" && (
-            <div>
-              <label htmlFor="sonda_asignada" className="block text-sm font-medium text-gray-700 mb-1">Escuela / Sonda Asignada</label>
-              <select id="sonda_asignada" name="sonda_asignada" required defaultValue={user.sonda_asignada || ""}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                <option value="">Seleccionar escuela...</option>
-                {devices.map((d) => (
-                  <option key={d.id} value={d.id}>{d.nombre} ({d.id})</option>
-                ))}
-              </select>
-              <p className="text-xs text-gray-400 mt-1">El maestro solo podrá ver los datos de esta sonda.</p>
-            </div>
-          )}
-
-          <div className="flex items-center gap-3">
-            <label htmlFor="activo-toggle" className="text-sm font-medium text-gray-700">Estado</label>
-            <button
-              type="button"
-              id="activo-toggle"
-              onClick={() => setActivo(!activo)}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${activo ? "bg-green-500" : "bg-gray-300"}`}
-            >
-              <span className={`inline-block h-4 w-4 rounded-full bg-white transition-transform ${activo ? "translate-x-6" : "translate-x-1"}`} />
-            </button>
-            <span className={`text-sm ${activo ? "text-green-600" : "text-gray-400"}`}>
-              {activo ? "Activo" : "Inactivo"}
-            </span>
           </div>
 
           {state?.error && (
             <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{state.error}</p>
+          )}
+
+          {state?.success && (
+            <p className="text-sm text-green-600 bg-green-50 rounded-lg px-3 py-2">Usuario actualizado.</p>
           )}
 
           <button type="submit" disabled={pending}

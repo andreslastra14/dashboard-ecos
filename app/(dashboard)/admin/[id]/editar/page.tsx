@@ -24,9 +24,6 @@ export default async function EditarUsuarioPage({
         email: user.email,
         nombre: user.nombre,
         role: user.role,
-        zona_asignada: user.zona_asignada,
-        sonda_asignada: user.sonda_asignada,
-        activo: user.activo,
       }}
     />
   );

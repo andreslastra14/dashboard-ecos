@@ -23,21 +23,18 @@ export async function createUserAction(
 
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
-  const nombre = formData.get("nombre") as string;
   const role = formData.get("role") as Role;
-  const zona_asignada = (formData.get("zona_asignada") as string) || null;
-  const sonda_asignada = (formData.get("sonda_asignada") as string) || null;
 
-  if (!email || !password || !nombre || !role) {
-    return { error: "Todos los campos son requeridos." };
+  if (!email || !password || !role) {
+    return { error: "Usuario, contraseña y rol son requeridos." };
   }
 
   try {
-    await createUser({ email, password, nombre, role, zona_asignada, sonda_asignada });
+    await createUser({ email, password, nombre: email, role, zona_asignada: null });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     if (/duplicate key|unique/i.test(msg)) {
-      return { error: "Ya existe un usuario con ese correo." };
+      return { error: "Ya existe un usuario con ese nombre." };
     }
     console.error("createUser failed:", err);
     return { error: `Error al crear usuario: ${msg}` };
@@ -54,25 +51,17 @@ export async function updateUserAction(
 
   const id = formData.get("id") as string;
   const email = formData.get("email") as string;
-  const nombre = formData.get("nombre") as string;
   const role = formData.get("role") as Role;
-  const zona_asignada = (formData.get("zona_asignada") as string) || null;
-  const sonda_asignada = (formData.get("sonda_asignada") as string) || null;
   const password = formData.get("password") as string;
-  const activo = formData.get("activo") === "true";
 
-  if (!id || !email || !nombre || !role) {
+  if (!id || !email || !role) {
     return { error: "Campos requeridos faltantes." };
   }
 
   try {
     await updateUser(id, {
       email,
-      nombre,
       role,
-      zona_asignada,
-      sonda_asignada,
-      activo,
       ...(password ? { password } : {}),
     });
   } catch (err) {

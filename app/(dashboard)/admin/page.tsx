@@ -91,11 +91,9 @@ export default async function AdminPage() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-gray-100" style={{ backgroundColor: "#f8fafc" }}>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Nombre</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Email</th>
+              <th className="text-left px-4 py-3 font-medium text-gray-600">Usuario</th>
               <th className="text-left px-4 py-3 font-medium text-gray-600">Rol</th>
               <th className="text-left px-4 py-3 font-medium text-gray-600">Asignación</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Estado</th>
               <th className="text-right px-4 py-3 font-medium text-gray-600">Acciones</th>
             </tr>
           </thead>
@@ -103,7 +101,6 @@ export default async function AdminPage() {
             {users.map((u) => (
               <tr key={u.id} className="border-b border-gray-50 hover:bg-gray-50/50">
                 <td className="px-4 py-3 font-medium text-gray-900">{u.nombre}</td>
-                <td className="px-4 py-3 text-gray-600">{u.email}</td>
                 <td className="px-4 py-3">
                   <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full"
                     style={{
@@ -120,11 +117,6 @@ export default async function AdminPage() {
                   {u.role === "maestro" && u.sonda_asignada
                     ? `Sonda: ${u.sonda_asignada}`
                     : u.zona_asignada || "Todas las zonas"}
-                </td>
-                <td className="px-4 py-3">
-                  <span className={`text-xs font-medium ${u.activo ? "text-green-600" : "text-gray-400"}`}>
-                    {u.activo ? "Activo" : "Inactivo"}
-                  </span>
                 </td>
                 <td className="px-4 py-3 text-right">
                   <div className="flex items-center justify-end gap-1">
