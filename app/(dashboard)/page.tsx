@@ -187,7 +187,6 @@ export default async function Home({ searchParams }: PageProps) {
   // ── Speed chart from registros recientes ──────────────────
   const registrosMuestra = [...filteredRegistros].reverse().slice(-30);
   const speedData = registrosMuestra
-    .filter((r) => r.download_mbps > 0)
     .map((r) => {
       const ts = r.timestamp;
       let hora = "";

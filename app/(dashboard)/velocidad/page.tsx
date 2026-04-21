@@ -40,9 +40,7 @@ export default async function VelocidadPage({ searchParams }: PageProps) {
     ? registros.filter((r) => r.cpu_id === sondaParam)
     : registros;
 
-  const conVelocidad = filteredRegistros.filter((r) => r.download_mbps > 0);
-
-  const speedData = [...conVelocidad].reverse().slice(-50).map((r) => {
+  const speedData = [...filteredRegistros].reverse().slice(-50).map((r) => {
     let hora = "";
     if (r.timestamp && typeof r.timestamp === "object" && "toDate" in r.timestamp) {
       const d = (r.timestamp as { toDate: () => Date }).toDate();
@@ -55,6 +53,7 @@ export default async function VelocidadPage({ searchParams }: PageProps) {
     };
   });
 
+  const conVelocidad = filteredRegistros.filter((r) => r.download_mbps > 0);
   const downs = conVelocidad.map((r) => r.download_mbps);
   const maxDown = downs.length ? Math.max(...downs).toFixed(1) : "—";
   const minDown = downs.length ? Math.min(...downs).toFixed(1) : "—";
