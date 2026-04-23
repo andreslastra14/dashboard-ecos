@@ -1,20 +1,24 @@
 import { getDispositivos, getEscuelas, getRegistrosRecientes } from "@/lib/queries";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SpeedChart } from "@/components/SpeedChart";
+import { RangeSelector } from "@/components/RangeSelector";
 
 export const revalidate = 60;
 
 interface PageProps {
-  searchParams: Promise<{ sonda?: string }>;
+  searchParams: Promise<{ sonda?: string; horas?: string }>;
 }
 
+const RANGOS_VALIDOS = [1, 3, 5, 8, 12];
+
 export default async function VelocidadPage({ searchParams }: PageProps) {
-  const { sonda: sondaParam } = await searchParams;
+  const { sonda: sondaParam, horas: horasParam } = await searchParams;
+  const horas = RANGOS_VALIDOS.includes(Number(horasParam)) ? Number(horasParam) : 12;
 
   const [dispositivos, escuelas, registros] = await Promise.all([
     getDispositivos(),
     getEscuelas(),
-    getRegistrosRecientes(2000, 12),
+    getRegistrosRecientes(2000, horas),
   ]);
 
   // Build device list
@@ -103,8 +107,9 @@ export default async function VelocidadPage({ searchParams }: PageProps) {
 
       {/* Chart */}
       <Card className="rounded-2xl shadow-sm">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-semibold text-gray-700">{titulo}</CardTitle>
+        <CardHeader className="pb-2 flex flex-row items-center justify-between gap-2 space-y-0">
+          <CardTitle className="text-sm font-semibold text-gray-700">{titulo} ({horas}h)</CardTitle>
+          <RangeSelector current={horas} />
         </CardHeader>
         <CardContent>
           {speedData.length > 0 ? (

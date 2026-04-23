@@ -17,6 +17,7 @@ import { InsightsPanel } from "@/components/InsightsPanel";
 import { SystemHealthSummary } from "@/components/SystemHealthSummary";
 import { SchoolMapWrapper } from "@/components/SchoolMapWrapper";
 import { KpiCard } from "@/components/KpiCard";
+import { RangeSelector } from "@/components/RangeSelector";
 import {
   Wifi,
   Download,
@@ -44,15 +45,18 @@ function parseTemp(temp: string): number {
 }
 
 interface PageProps {
-  searchParams: Promise<{ sonda?: string }>;
+  searchParams: Promise<{ sonda?: string; horas?: string }>;
 }
 
+const RANGOS_VALIDOS = [1, 3, 5, 8, 12];
+
 export default async function Home({ searchParams }: PageProps) {
-  const { sonda: sondaParam } = await searchParams;
+  const { sonda: sondaParam, horas: horasParam } = await searchParams;
+  const horas = RANGOS_VALIDOS.includes(Number(horasParam)) ? Number(horasParam) : 12;
   const [dispositivos, escuelas, registros, casoStats] = await Promise.all([
     getDispositivos(),
     getEscuelas(),
-    getRegistrosRecientes(2000, 12),
+    getRegistrosRecientes(2000, horas),
     getCasoStats(),
   ]);
 
@@ -364,7 +368,10 @@ export default async function Home({ searchParams }: PageProps) {
           <SystemHealthSummary data={systemHealth} />
         </div>
         <div className={CARD} style={CARD_STYLE}>
-          <p className={`${TITLE} mb-3`}>Velocidad Ethernet vs WiFi — Mbps</p>
+          <div className="flex items-center justify-between mb-3 gap-2">
+            <p className={TITLE}>Velocidad Ethernet vs WiFi — Mbps ({horas}h)</p>
+            <RangeSelector current={horas} />
+          </div>
           <SpeedChart data={speedData} />
         </div>
       </div>
