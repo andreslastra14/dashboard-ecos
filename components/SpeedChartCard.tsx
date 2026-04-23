@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from "recharts";
@@ -27,6 +27,22 @@ function formatHour(ts: number) {
   });
 }
 
+function bucketize(points: SpeedPoint[], bucketMs: number): SpeedPoint[] {
+  if (!points.length) return [];
+  const buckets = new Map<number, { d: number[]; s: number[] }>();
+  for (const p of points) {
+    const key = Math.floor(p.ts / bucketMs) * bucketMs;
+    const b = buckets.get(key) ?? { d: [], s: [] };
+    if (p.descarga > 0) b.d.push(p.descarga);
+    if (p.subida > 0) b.s.push(p.subida);
+    buckets.set(key, b);
+  }
+  const mean = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
+  return [...buckets.entries()]
+    .map(([ts, b]) => ({ ts, descarga: mean(b.d), subida: mean(b.s) }))
+    .sort((a, b) => a.ts - b.ts);
+}
+
 export function SpeedChartCard({ data, title, initialHours = 12 }: Props) {
   const [horas, setHoras] = useState(initialHours);
   const [domain, setDomain] = useState<[number, number] | null>(null);
@@ -36,7 +52,10 @@ export function SpeedChartCard({ data, title, initialHours = 12 }: Props) {
   const gradDesc = `gradDesc-${id}`;
   const gradSub = `gradSub-${id}`;
 
-  const now = data.length ? data[data.length - 1].ts : Date.now();
+  // Bucket to 3-minute averages => 240 points max in 12h; smooths jitter and cuts lag
+  const bucketed = useMemo(() => bucketize(data, 3 * 60 * 1000), [data]);
+
+  const now = bucketed.length ? bucketed[bucketed.length - 1].ts : Date.now();
 
   useEffect(() => {
     const target: [number, number] = [now - horas * 60 * 60 * 1000, now];
@@ -96,7 +115,7 @@ export function SpeedChartCard({ data, title, initialHours = 12 }: Props) {
         </div>
       </div>
       <ResponsiveContainer width="100%" height={220}>
-        <AreaChart data={data} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
+        <AreaChart data={bucketed} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
           <defs>
             <linearGradient id={gradDesc} x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%" stopColor="#1e3a5f" stopOpacity={0.25} />
@@ -126,9 +145,9 @@ export function SpeedChartCard({ data, title, initialHours = 12 }: Props) {
             labelFormatter={(v) => formatHour(Number(v))}
             formatter={(v, name) => [`${Number(v).toFixed(1)} Mbps`, name]}
           />
-          <Legend wrapperStyle={{ fontSize: 11 }} />
+          <Legend wrapperStyle={{ fontSize: 11 }} iconType="plainline" />
           <Area
-            type="natural"
+            type="monotone"
             dataKey="descarga"
             stroke="#1e3a5f"
             fill={`url(#${gradDesc})`}
@@ -142,7 +161,7 @@ export function SpeedChartCard({ data, title, initialHours = 12 }: Props) {
             activeDot={{ r: 3 }}
           />
           <Area
-            type="natural"
+            type="monotone"
             dataKey="subida"
             stroke="#2e6da4"
             fill={`url(#${gradSub})`}
