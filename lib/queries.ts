@@ -194,13 +194,14 @@ export async function getRegistrosDispositivo(cpuId: string, limite = 100): Prom
 
 export async function getRegistrosRecientes(limite = 2000, horas = 12): Promise<RegistroHistorico[]> {
   try {
+    const cutoff = new Date(Date.now() - horas * 60 * 60 * 1000);
     const rows = await query<MasterRow & { id: number }>(
       `SELECT id, ${MASTER_COLS}
        FROM registros_ecos_master
-       WHERE fecha_registro >= NOW() - ($1 || ' hours')::interval
+       WHERE fecha_registro >= $1
        ORDER BY fecha_registro DESC
        LIMIT $2`,
-      [String(horas), limite]
+      [cutoff, limite]
     );
     return rows.map(rowToRegistro);
   } catch (err) {
