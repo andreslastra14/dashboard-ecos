@@ -52,7 +52,7 @@ export default async function Home({ searchParams }: PageProps) {
   const [dispositivos, escuelas, registros, casoStats] = await Promise.all([
     getDispositivos(),
     getEscuelas(),
-    getRegistrosRecientes(500),
+    getRegistrosRecientes(2000, 12),
     getCasoStats(),
   ]);
 
@@ -184,9 +184,8 @@ export default async function Home({ searchParams }: PageProps) {
       };
     });
 
-  // ── Speed chart from registros recientes ──────────────────
-  const registrosMuestra = [...filteredRegistros].reverse().slice(-30);
-  const speedData = registrosMuestra
+  // ── Speed chart from registros recientes (ultimas 12h) ─────
+  const speedData = [...filteredRegistros].reverse()
     .map((r) => {
       const ts = r.timestamp;
       let hora = "";

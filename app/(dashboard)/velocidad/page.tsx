@@ -14,7 +14,7 @@ export default async function VelocidadPage({ searchParams }: PageProps) {
   const [dispositivos, escuelas, registros] = await Promise.all([
     getDispositivos(),
     getEscuelas(),
-    getRegistrosRecientes(500),
+    getRegistrosRecientes(2000, 12),
   ]);
 
   // Build device list
@@ -40,7 +40,7 @@ export default async function VelocidadPage({ searchParams }: PageProps) {
     ? registros.filter((r) => r.cpu_id === sondaParam)
     : registros;
 
-  const speedData = [...filteredRegistros].reverse().slice(-50).map((r) => {
+  const speedData = [...filteredRegistros].reverse().map((r) => {
     let hora = "";
     if (r.timestamp && typeof r.timestamp === "object" && "toDate" in r.timestamp) {
       const d = (r.timestamp as { toDate: () => Date }).toDate();
