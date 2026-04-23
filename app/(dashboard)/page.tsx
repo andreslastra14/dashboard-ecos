@@ -11,13 +11,12 @@ import type { MapMarker } from "@/components/SchoolMap";
 import type { InsightsData } from "@/components/InsightsPanel";
 import type { UptimeData } from "@/components/UptimeChart";
 import type { SystemHealthData } from "@/components/SystemHealthSummary";
-import { SpeedChart } from "@/components/SpeedChart";
+import { SpeedChartCard, type SpeedPoint } from "@/components/SpeedChartCard";
 import { UptimeChart } from "@/components/UptimeChart";
 import { InsightsPanel } from "@/components/InsightsPanel";
 import { SystemHealthSummary } from "@/components/SystemHealthSummary";
 import { SchoolMapWrapper } from "@/components/SchoolMapWrapper";
 import { KpiCard } from "@/components/KpiCard";
-import { RangeSelector } from "@/components/RangeSelector";
 import {
   Wifi,
   Download,
@@ -45,18 +44,15 @@ function parseTemp(temp: string): number {
 }
 
 interface PageProps {
-  searchParams: Promise<{ sonda?: string; horas?: string }>;
+  searchParams: Promise<{ sonda?: string }>;
 }
 
-const RANGOS_VALIDOS = [1, 3, 5, 8, 12];
-
 export default async function Home({ searchParams }: PageProps) {
-  const { sonda: sondaParam, horas: horasParam } = await searchParams;
-  const horas = RANGOS_VALIDOS.includes(Number(horasParam)) ? Number(horasParam) : 12;
+  const { sonda: sondaParam } = await searchParams;
   const [dispositivos, escuelas, registros, casoStats] = await Promise.all([
     getDispositivos(),
     getEscuelas(),
-    getRegistrosRecientes(2000, horas),
+    getRegistrosRecientes(3000, 12),
     getCasoStats(),
   ]);
 
@@ -189,20 +185,21 @@ export default async function Home({ searchParams }: PageProps) {
     });
 
   // ── Speed chart from registros recientes (ultimas 12h) ─────
-  const speedData = [...filteredRegistros].reverse()
+  const speedData: SpeedPoint[] = [...filteredRegistros]
+    .reverse()
     .map((r) => {
       const ts = r.timestamp;
-      let hora = "";
+      let tsNum = 0;
       if (ts && typeof ts === "object" && "toDate" in ts) {
-        const d = (ts as { toDate: () => Date }).toDate();
-        hora = d.toLocaleTimeString("es-SV", { hour: "2-digit", minute: "2-digit", timeZone: "America/El_Salvador" });
+        tsNum = (ts as { toDate: () => Date }).toDate().getTime();
       }
       return {
-        hora,
+        ts: tsNum,
         descarga: r.eth_download_mbps || r.download_mbps,
         subida: r.wifi_download_mbps,
       };
-    });
+    })
+    .filter((p) => p.ts > 0);
 
   // ── System health summary ─────────────────────────────────
   const onlineForHealth = filteredDispositivos.filter((d) => d.online);
@@ -368,13 +365,7 @@ export default async function Home({ searchParams }: PageProps) {
           <SystemHealthSummary data={systemHealth} />
         </div>
         <div className={CARD} style={CARD_STYLE}>
-          <div className="flex items-center justify-between mb-3 gap-2">
-            <p className={TITLE}>Velocidad Ethernet vs WiFi — Mbps ({horas}h)</p>
-            <RangeSelector current={horas} pathname="/" sonda={sondaParam} />
-          </div>
-          <div key={horas} className="chart-zoom-x">
-            <SpeedChart data={speedData} />
-          </div>
+          <SpeedChartCard data={speedData} title="Velocidad Ethernet vs WiFi — Mbps" />
         </div>
       </div>
 

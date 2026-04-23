@@ -1,24 +1,20 @@
 import { getDispositivos, getEscuelas, getRegistrosRecientes } from "@/lib/queries";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { SpeedChart } from "@/components/SpeedChart";
-import { RangeSelector } from "@/components/RangeSelector";
+import { SpeedChartCard, type SpeedPoint } from "@/components/SpeedChartCard";
 
 export const revalidate = 60;
 
 interface PageProps {
-  searchParams: Promise<{ sonda?: string; horas?: string }>;
+  searchParams: Promise<{ sonda?: string }>;
 }
 
-const RANGOS_VALIDOS = [1, 3, 5, 8, 12];
-
 export default async function VelocidadPage({ searchParams }: PageProps) {
-  const { sonda: sondaParam, horas: horasParam } = await searchParams;
-  const horas = RANGOS_VALIDOS.includes(Number(horasParam)) ? Number(horasParam) : 12;
+  const { sonda: sondaParam } = await searchParams;
 
   const [dispositivos, escuelas, registros] = await Promise.all([
     getDispositivos(),
     getEscuelas(),
-    getRegistrosRecientes(2000, horas),
+    getRegistrosRecientes(3000, 12),
   ]);
 
   // Build device list
@@ -44,18 +40,20 @@ export default async function VelocidadPage({ searchParams }: PageProps) {
     ? registros.filter((r) => r.cpu_id === sondaParam)
     : registros;
 
-  const speedData = [...filteredRegistros].reverse().map((r) => {
-    let hora = "";
-    if (r.timestamp && typeof r.timestamp === "object" && "toDate" in r.timestamp) {
-      const d = (r.timestamp as { toDate: () => Date }).toDate();
-      hora = d.toLocaleTimeString("es-SV", { hour: "2-digit", minute: "2-digit", timeZone: "America/El_Salvador" });
-    }
-    return {
-      hora,
-      descarga: r.eth_download_mbps || r.download_mbps,
-      subida: r.wifi_download_mbps,
-    };
-  });
+  const speedData: SpeedPoint[] = [...filteredRegistros]
+    .reverse()
+    .map((r) => {
+      let tsNum = 0;
+      if (r.timestamp && typeof r.timestamp === "object" && "toDate" in r.timestamp) {
+        tsNum = (r.timestamp as { toDate: () => Date }).toDate().getTime();
+      }
+      return {
+        ts: tsNum,
+        descarga: r.eth_download_mbps || r.download_mbps,
+        subida: r.wifi_download_mbps,
+      };
+    })
+    .filter((p) => p.ts > 0);
 
   const conVelocidad = filteredRegistros.filter((r) => r.download_mbps > 0);
   const downs = conVelocidad.map((r) => r.download_mbps);
@@ -107,15 +105,9 @@ export default async function VelocidadPage({ searchParams }: PageProps) {
 
       {/* Chart */}
       <Card className="rounded-2xl shadow-sm">
-        <CardHeader className="pb-2 flex flex-row items-center justify-between gap-2 space-y-0">
-          <CardTitle className="text-sm font-semibold text-gray-700">{titulo} ({horas}h)</CardTitle>
-          <RangeSelector current={horas} pathname="/velocidad" sonda={sondaParam} />
-        </CardHeader>
-        <CardContent>
+        <CardContent className="pt-4">
           {speedData.length > 0 ? (
-            <div key={horas} className="chart-zoom-x">
-              <SpeedChart data={speedData} />
-            </div>
+            <SpeedChartCard data={speedData} title={titulo} />
           ) : (
             <div className="text-center py-12">
               <p className="text-sm text-gray-400">Sin mediciones de velocidad disponibles</p>
