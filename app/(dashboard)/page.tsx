@@ -370,7 +370,7 @@ export default async function Home({ searchParams }: PageProps) {
         <div className={CARD} style={CARD_STYLE}>
           <div className="flex items-center justify-between mb-3 gap-2">
             <p className={TITLE}>Velocidad Ethernet vs WiFi — Mbps ({horas}h)</p>
-            <RangeSelector current={horas} />
+            <RangeSelector current={horas} pathname="/" sonda={sondaParam} />
           </div>
           <div key={horas} className="chart-zoom-x">
             <SpeedChart data={speedData} />

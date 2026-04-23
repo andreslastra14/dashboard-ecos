@@ -1,19 +1,24 @@
 "use client";
 
-import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 
 const RANGES = [1, 3, 5, 8, 12] as const;
 
-export function RangeSelector({ current = 12 }: { current?: number }) {
+interface Props {
+  current?: number;
+  pathname: string;
+  sonda?: string;
+}
+
+export function RangeSelector({ current = 12, pathname, sonda }: Props) {
   const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
   const [pending, startTransition] = useTransition();
 
   function setRange(h: number) {
     if (h === current) return;
-    const params = new URLSearchParams(searchParams?.toString() ?? "");
+    const params = new URLSearchParams();
+    if (sonda) params.set("sonda", sonda);
     params.set("horas", String(h));
     startTransition(() => {
       router.push(`${pathname}?${params.toString()}`);

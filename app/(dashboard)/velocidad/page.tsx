@@ -109,7 +109,7 @@ export default async function VelocidadPage({ searchParams }: PageProps) {
       <Card className="rounded-2xl shadow-sm">
         <CardHeader className="pb-2 flex flex-row items-center justify-between gap-2 space-y-0">
           <CardTitle className="text-sm font-semibold text-gray-700">{titulo} ({horas}h)</CardTitle>
-          <RangeSelector current={horas} />
+          <RangeSelector current={horas} pathname="/velocidad" sonda={sondaParam} />
         </CardHeader>
         <CardContent>
           {speedData.length > 0 ? (
