@@ -113,7 +113,9 @@ export default async function VelocidadPage({ searchParams }: PageProps) {
         </CardHeader>
         <CardContent>
           {speedData.length > 0 ? (
-            <SpeedChart data={speedData} />
+            <div key={horas} className="chart-zoom-x">
+              <SpeedChart data={speedData} />
+            </div>
           ) : (
             <div className="text-center py-12">
               <p className="text-sm text-gray-400">Sin mediciones de velocidad disponibles</p>

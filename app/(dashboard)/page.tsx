@@ -372,7 +372,9 @@ export default async function Home({ searchParams }: PageProps) {
             <p className={TITLE}>Velocidad Ethernet vs WiFi — Mbps ({horas}h)</p>
             <RangeSelector current={horas} />
           </div>
-          <SpeedChart data={speedData} />
+          <div key={horas} className="chart-zoom-x">
+            <SpeedChart data={speedData} />
+          </div>
         </div>
       </div>
 

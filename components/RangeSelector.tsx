@@ -12,12 +12,11 @@ export function RangeSelector({ current = 12 }: { current?: number }) {
   const [pending, startTransition] = useTransition();
 
   function setRange(h: number) {
+    if (h === current) return;
     const params = new URLSearchParams(searchParams?.toString() ?? "");
-    if (h === 12) params.delete("horas");
-    else params.set("horas", String(h));
-    const qs = params.toString();
+    params.set("horas", String(h));
     startTransition(() => {
-      router.push(qs ? `${pathname}?${qs}` : pathname);
+      router.push(`${pathname}?${params.toString()}`);
     });
   }
 
