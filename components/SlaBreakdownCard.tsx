@@ -1,3 +1,5 @@
+import { CheckCircle2 } from "lucide-react";
+
 interface BreakdownItem {
   label: string;
   value: number;
@@ -25,32 +27,41 @@ export function SlaBreakdownCard({
       className="rounded-xl border bg-white p-5 shadow-sm"
       style={{ borderColor: "#e2e8f0" }}
     >
-      <p className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-4">
+      <p
+        className="text-[11px] font-semibold uppercase tracking-widest mb-4"
+        style={{ color: "#64748b" }}
+      >
         {titulo}
       </p>
 
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-3.5">
         {items.map((it) => {
           const pct = it.total > 0 ? (it.value / it.total) * 100 : 0;
           return (
             <div key={it.label} className="flex items-center gap-3">
-              <div className="flex items-center gap-2 w-24 shrink-0">
+              <div className="flex items-center gap-2 w-28 shrink-0">
                 <span
-                  className="w-3 h-3 rounded-sm"
+                  className="w-2.5 h-2.5 rounded-sm shrink-0"
                   style={{ backgroundColor: it.color }}
                 />
-                <span className="text-sm text-slate-700">{it.label}</span>
+                <span className="text-sm text-slate-700 truncate">{it.label}</span>
               </div>
-              <div className="flex-1 h-2 rounded-full overflow-hidden bg-slate-100">
+              <div
+                className="flex-1 h-1.5 rounded-full overflow-hidden"
+                style={{ backgroundColor: "#f1f5f9" }}
+              >
                 <div
-                  className="h-full rounded-full"
+                  className="h-full rounded-full transition-all"
                   style={{
                     width: `${Math.min(100, Math.max(0, pct))}%`,
                     backgroundColor: it.color,
                   }}
                 />
               </div>
-              <span className="text-xs font-mono text-slate-500 w-12 text-right">
+              <span
+                className="text-xs font-mono w-12 text-right"
+                style={{ color: "#94a3b8" }}
+              >
                 {pct.toFixed(0)}%
               </span>
               <span className="text-sm font-mono font-semibold text-slate-900 w-12 text-right">
@@ -62,14 +73,17 @@ export function SlaBreakdownCard({
       </div>
 
       <div
-        className="mt-4 pt-3 border-t flex items-center justify-between"
+        className="mt-5 pt-3 border-t flex items-center justify-between"
         style={{ borderColor: "#e2e8f0" }}
       >
-        <span className="text-xs text-slate-600 flex items-center gap-1.5">
-          <span style={{ color: "#22c55e" }}>✓</span>
+        <span className="text-xs flex items-center gap-1.5" style={{ color: "#64748b" }}>
+          <CheckCircle2 className="w-3.5 h-3.5" style={{ color: "#1e3a5f" }} />
           {totalLabel}
         </span>
-        <span className="text-sm font-mono font-semibold text-slate-900">
+        <span
+          className="text-sm font-mono font-semibold"
+          style={{ color: "#1e3a5f" }}
+        >
           {totalGeneral} {totalUnidad}
         </span>
       </div>

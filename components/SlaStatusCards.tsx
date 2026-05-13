@@ -1,60 +1,100 @@
+import { CheckCircle2, WifiOff } from "lucide-react";
+
 interface SlaStatusCardsProps {
   normal: number;
   offline: number;
 }
 
-const CARD_BASE =
-  "relative bg-white rounded-xl border shadow-sm p-5 flex flex-col items-center justify-center gap-2 overflow-hidden";
-
 export function SlaStatusCards({ normal, offline }: SlaStatusCardsProps) {
   return (
     <div className="grid grid-cols-2 gap-3">
       <div
-        className={CARD_BASE}
-        style={{ borderColor: "#bbf7d0" }}
+        className="relative rounded-xl border bg-white p-5 shadow-sm overflow-hidden"
+        style={{ borderColor: "#e2e8f0" }}
       >
         <div
-          className="absolute top-0 left-0 right-0 h-1 rounded-t-xl"
-          style={{ backgroundColor: "#22c55e" }}
+          className="absolute top-0 right-0 w-24 h-24 rounded-full opacity-[0.04] -translate-y-8 translate-x-8"
+          style={{ backgroundColor: "#1e3a5f" }}
         />
-        <div
-          className="w-14 h-14 rounded-full flex items-center justify-center"
-          style={{ backgroundColor: "#dcfce7" }}
-        >
-          <span
-            className="w-7 h-7 rounded-full"
-            style={{ backgroundColor: "#22c55e" }}
-          />
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p
+              className="text-[10px] font-semibold uppercase tracking-widest mb-1"
+              style={{ color: "#64748b" }}
+            >
+              Normal
+            </p>
+            <p
+              className="text-4xl font-bold font-mono leading-none"
+              style={{ color: "#1e3a5f" }}
+            >
+              {normal}
+            </p>
+            <p className="text-[11px] mt-2 flex items-center gap-1.5" style={{ color: "#64748b" }}>
+              <span
+                className="w-1.5 h-1.5 rounded-full animate-pulse"
+                style={{ backgroundColor: "#4ade80" }}
+              />
+              Reportando · sin alerta
+            </p>
+          </div>
+          <div
+            className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
+            style={{ backgroundColor: "#1e3a5f14" }}
+          >
+            <CheckCircle2 className="w-5 h-5" style={{ color: "#1e3a5f" }} />
+          </div>
         </div>
-        <p className="text-4xl font-bold font-mono text-slate-900">{normal}</p>
-        <p className="text-xs font-semibold uppercase tracking-widest text-slate-700">
-          Normal
-        </p>
-        <p className="text-[11px] text-slate-400">Sin alerta</p>
+        <div
+          className="absolute bottom-0 left-0 right-0 h-[3px]"
+          style={{ backgroundColor: "#1e3a5f", opacity: 0.6 }}
+        />
       </div>
 
       <div
-        className={CARD_BASE}
-        style={{ borderColor: "#fecaca" }}
+        className="relative rounded-xl border bg-white p-5 shadow-sm overflow-hidden"
+        style={{ borderColor: offline > 0 ? "#fecaca" : "#e2e8f0" }}
       >
         <div
-          className="absolute top-0 left-0 right-0 h-1 rounded-t-xl"
-          style={{ backgroundColor: "#dc2626" }}
+          className="absolute top-0 right-0 w-24 h-24 rounded-full opacity-[0.04] -translate-y-8 translate-x-8"
+          style={{ backgroundColor: offline > 0 ? "#b91c1c" : "#94a3b8" }}
         />
-        <div
-          className="w-14 h-14 rounded-full flex items-center justify-center"
-          style={{ backgroundColor: "#fee2e2" }}
-        >
-          <span
-            className="w-7 h-7 rounded-full"
-            style={{ backgroundColor: "#dc2626" }}
-          />
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p
+              className="text-[10px] font-semibold uppercase tracking-widest mb-1"
+              style={{ color: "#64748b" }}
+            >
+              Offline
+            </p>
+            <p
+              className="text-4xl font-bold font-mono leading-none"
+              style={{ color: offline > 0 ? "#b91c1c" : "#94a3b8" }}
+            >
+              {offline}
+            </p>
+            <p className="text-[11px] mt-2 flex items-center gap-1.5" style={{ color: "#64748b" }}>
+              <span
+                className="w-1.5 h-1.5 rounded-full"
+                style={{ backgroundColor: offline > 0 ? "#b91c1c" : "#cbd5e1" }}
+              />
+              {offline > 0 ? "Sin señal · requiere atención" : "Todas reportando"}
+            </p>
+          </div>
+          <div
+            className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
+            style={{ backgroundColor: offline > 0 ? "#b91c1c14" : "#94a3b814" }}
+          >
+            <WifiOff
+              className="w-5 h-5"
+              style={{ color: offline > 0 ? "#b91c1c" : "#94a3b8" }}
+            />
+          </div>
         </div>
-        <p className="text-4xl font-bold font-mono text-slate-900">{offline}</p>
-        <p className="text-xs font-semibold uppercase tracking-widest text-slate-700">
-          Offline
-        </p>
-        <p className="text-[11px] text-slate-400">Sin señal</p>
+        <div
+          className="absolute bottom-0 left-0 right-0 h-[3px]"
+          style={{ backgroundColor: offline > 0 ? "#b91c1c" : "#94a3b8", opacity: 0.6 }}
+        />
       </div>
     </div>
   );

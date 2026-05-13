@@ -16,7 +16,8 @@ import {
 export const revalidate = 60;
 
 const CARD_STYLE = { borderColor: "#e2e8f0" };
-const TITLE = "text-xs font-semibold uppercase tracking-widest mb-3 text-slate-500";
+const TITLE = "text-[11px] font-semibold uppercase tracking-widest mb-3";
+const TITLE_COLOR = { color: "#64748b" };
 
 interface PageProps {
   searchParams: Promise<{ sonda?: string }>;
@@ -57,41 +58,47 @@ export default async function DashboardPage({ searchParams }: PageProps) {
         </div>
       )}
 
-      <SlaHeroCard
-        sla={sla.disponibilidad}
-        titulo="Reporte de Estado de Enlaces"
-        subtitulo="Sistema de Monitoreo ECOS · MINED El Salvador"
-        total={sla.desgloseEstado.total}
-        online={sla.desgloseEstado.normal}
-        fechaCorte={sla.fechaCorte}
-      />
+      <div className="print-avoid-break">
+        <SlaHeroCard
+          sla={sla.disponibilidad}
+          titulo="Reporte de Estado de Enlaces"
+          subtitulo="Sistema de Monitoreo ECOS · MINED El Salvador"
+          total={sla.desgloseEstado.total}
+          online={sla.desgloseEstado.normal}
+          fechaCorte={sla.fechaCorte}
+        />
+      </div>
 
-      <SlaStatusCards
-        normal={sla.desgloseEstado.normal}
-        offline={sla.desgloseEstado.offline}
-      />
+      <div className="print-avoid-break">
+        <SlaStatusCards
+          normal={sla.desgloseEstado.normal}
+          offline={sla.desgloseEstado.offline}
+        />
+      </div>
 
-      <SlaBreakdownCard
-        titulo="Desglose por Estado"
-        totalUnidad="sondas"
-        items={[
-          {
-            label: "Normal",
-            value: sla.desgloseEstado.normal,
-            total: sla.desgloseEstado.total,
-            color: "#22c55e",
-          },
-          {
-            label: "Offline",
-            value: sla.desgloseEstado.offline,
-            total: sla.desgloseEstado.total,
-            color: "#dc2626",
-          },
-        ]}
-      />
+      <div className="print-avoid-break">
+        <SlaBreakdownCard
+          titulo="Desglose por Estado"
+          totalUnidad="sondas"
+          items={[
+            {
+              label: "Normal",
+              value: sla.desgloseEstado.normal,
+              total: sla.desgloseEstado.total,
+              color: "#1e3a5f",
+            },
+            {
+              label: "Offline",
+              value: sla.desgloseEstado.offline,
+              total: sla.desgloseEstado.total,
+              color: "#b91c1c",
+            },
+          ]}
+        />
+      </div>
 
-      <div>
-        <p className={TITLE}>SLAs Estratégicos</p>
+      <div className="print-avoid-break">
+        <p className={TITLE} style={TITLE_COLOR}>SLAs Estratégicos</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           <SlaMiniCard
             label="Velocidad Significativa"
@@ -134,15 +141,15 @@ export default async function DashboardPage({ searchParams }: PageProps) {
 
       {hayDatos && sla.porDepartamento.length > 0 && (
         <div
-          className="rounded-xl border bg-white p-5 shadow-sm"
+          className="rounded-xl border bg-white p-5 shadow-sm print-avoid-break"
           style={CARD_STYLE}
         >
-          <p className={TITLE}>Disponibilidad por Departamento</p>
+          <p className={TITLE} style={TITLE_COLOR}>Disponibilidad por Departamento</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-2.5">
             {sla.porDepartamento.map((d) => {
               const color =
                 d.disponibilidad >= 99
-                  ? "#22c55e"
+                  ? "#1e3a5f"
                   : d.disponibilidad >= 90
                     ? "#d97706"
                     : "#b91c1c";

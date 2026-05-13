@@ -8,20 +8,27 @@ interface SlaMiniCardProps {
   fuente?: string;
 }
 
-function semaforoColor(sla: SlaResult): { fg: string; bg: string; bar: string } {
-  if (sla.cumple) {
-    return { fg: "#1e5f4a", bg: "#dcfce7", bar: "#22c55e" };
-  }
+function semaforoColor(sla: SlaResult): string {
+  if (sla.cumple) return "#1e3a5f";
   const target = sla.target;
   const valor = sla.valor;
   const ambar =
     sla.targetOperator === ">="
       ? valor >= target * 0.95
       : valor <= target * 1.05;
-  if (ambar) {
-    return { fg: "#92400e", bg: "#fef3c7", bar: "#d97706" };
-  }
-  return { fg: "#991b1b", bg: "#fee2e2", bar: "#b91c1c" };
+  if (ambar) return "#d97706";
+  return "#b91c1c";
+}
+
+function semaforoLabel(sla: SlaResult): string {
+  if (sla.cumple) return "Cumple";
+  const target = sla.target;
+  const valor = sla.valor;
+  const ambar =
+    sla.targetOperator === ">="
+      ? valor >= target * 0.95
+      : valor <= target * 1.05;
+  return ambar ? "En riesgo" : "Incumple";
 }
 
 function formatValor(sla: SlaResult): string {
@@ -38,45 +45,60 @@ function formatTarget(sla: SlaResult): string {
 }
 
 export function SlaMiniCard({ label, sla, icon: Icon, fuente }: SlaMiniCardProps) {
-  const c = semaforoColor(sla);
+  const color = semaforoColor(sla);
+  const estado = semaforoLabel(sla);
+
   return (
     <div
-      className="relative bg-white rounded-xl border shadow-sm p-4 flex flex-col gap-2 overflow-hidden"
+      className="relative bg-white rounded-xl border shadow-sm p-4 flex flex-col gap-3 overflow-hidden"
       style={{ borderColor: "#e2e8f0" }}
     >
-      <div className="flex items-start justify-between">
-        <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">
+      <div
+        className="absolute top-0 right-0 w-20 h-20 rounded-full opacity-[0.04] -translate-y-6 translate-x-6"
+        style={{ backgroundColor: color }}
+      />
+
+      <div className="flex items-start justify-between gap-2">
+        <p
+          className="text-[10px] font-semibold uppercase tracking-widest"
+          style={{ color: "#64748b" }}
+        >
           {label}
         </p>
         <div
-          className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-          style={{ backgroundColor: c.bg }}
+          className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+          style={{ backgroundColor: `${color}14` }}
         >
-          <Icon className="w-4 h-4" style={{ color: c.fg }} />
+          <Icon className="w-4 h-4" style={{ color }} />
         </div>
       </div>
 
-      <p className="text-3xl font-bold font-mono tracking-tight" style={{ color: c.fg }}>
-        {formatValor(sla)}
-      </p>
-
-      <div className="flex items-center gap-2">
+      <div className="flex items-baseline justify-between gap-3">
+        <p className="text-3xl font-bold font-mono tracking-tight" style={{ color }}>
+          {formatValor(sla)}
+        </p>
         <span
-          className="inline-block w-2 h-2 rounded-full"
-          style={{ backgroundColor: c.bar }}
-        />
-        <span className="text-[11px] text-slate-500">
-          Target {formatTarget(sla)}
+          className="text-[10px] font-semibold uppercase tracking-wider rounded px-1.5 py-0.5"
+          style={{ backgroundColor: `${color}14`, color }}
+        >
+          {estado}
         </span>
       </div>
 
-      {fuente && (
-        <p className="text-[10px] text-slate-400 mt-1">{fuente}</p>
-      )}
+      <div className="flex items-center justify-between gap-2 text-[11px]" style={{ color: "#94a3b8" }}>
+        <span className="flex items-center gap-1.5">
+          <span
+            className="inline-block w-1.5 h-1.5 rounded-full"
+            style={{ backgroundColor: color }}
+          />
+          Target {formatTarget(sla)}
+        </span>
+        {fuente && <span className="text-right truncate ml-2">{fuente}</span>}
+      </div>
 
       <div
         className="absolute bottom-0 left-0 right-0 h-[3px] rounded-b-xl"
-        style={{ backgroundColor: c.bar, opacity: 0.7 }}
+        style={{ backgroundColor: color, opacity: 0.7 }}
       />
     </div>
   );

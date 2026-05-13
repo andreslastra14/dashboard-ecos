@@ -1,3 +1,4 @@
+import Image from "next/image";
 import type { SlaResult } from "@/lib/sla";
 
 interface SlaHeroCardProps {
@@ -7,13 +8,15 @@ interface SlaHeroCardProps {
   total: number;
   online: number;
   fechaCorte: Date;
+  minutosDesdeCorte?: number;
 }
 
 function formatFecha(d: Date): string {
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const meses = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
   const dd = String(d.getDate()).padStart(2, "0");
-  return `${yyyy}-${mm}-${dd}`;
+  const mm = meses[d.getMonth()];
+  const yyyy = d.getFullYear();
+  return `${dd} ${mm} ${yyyy}`;
 }
 
 function formatHora(d: Date): string {
@@ -32,93 +35,126 @@ export function SlaHeroCard({
   total,
   online,
   fechaCorte,
+  minutosDesdeCorte = 0,
 }: SlaHeroCardProps) {
-  const ahora = Date.now();
-  const minutosDesdeCorte = (ahora - fechaCorte.getTime()) / 60000;
-  const actualizado = minutosDesdeCorte < 5;
   const valorFmt = `${sla.valor.toFixed(0)}%`;
+  const activo = minutosDesdeCorte < 5;
+  const pct = Math.min(100, Math.max(0, sla.valor));
 
   return (
     <div
-      className="relative overflow-hidden rounded-xl text-white shadow-sm"
+      className="relative overflow-hidden rounded-xl border shadow-sm"
       style={{
-        background:
-          "linear-gradient(135deg, #1E3A5F 0%, #2e6da4 60%, #3b82a0 100%)",
+        backgroundColor: "#0a1628",
+        borderColor: "#1e3a5f",
       }}
     >
-      <div className="px-6 py-5 flex flex-col gap-4">
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div>
-            <h2 className="text-base font-semibold leading-tight">{titulo}</h2>
-            <p className="text-xs text-white/70 mt-0.5">{subtitulo}</p>
-          </div>
-          {actualizado ? (
-            <span
-              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider"
-              style={{ backgroundColor: "rgba(74, 222, 128, 0.2)", color: "#86efac" }}
-            >
-              <span
-                className="w-1.5 h-1.5 rounded-full"
-                style={{ backgroundColor: "#4ade80" }}
-              />
-              Actualizado
-            </span>
-          ) : (
-            <span
-              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider"
-              style={{ backgroundColor: "rgba(251, 191, 36, 0.2)", color: "#fcd34d" }}
-            >
-              <span
-                className="w-1.5 h-1.5 rounded-full"
-                style={{ backgroundColor: "#fbbf24" }}
-              />
-              {`Hace ${Math.round(minutosDesdeCorte)} min`}
-            </span>
-          )}
-        </div>
+      <div
+        className="absolute inset-0 opacity-30 pointer-events-none"
+        style={{
+          background:
+            "radial-gradient(ellipse 90% 60% at 100% 0%, #2e6da4 0%, transparent 60%), radial-gradient(ellipse 80% 70% at 0% 100%, #1e3a5f 0%, transparent 50%)",
+        }}
+      />
 
-        <div className="flex items-baseline gap-4 flex-wrap">
-          <span className="text-6xl md:text-7xl font-bold font-mono leading-none">
-            {valorFmt}
-          </span>
-          <div className="flex flex-col gap-0.5 min-w-0">
-            <p className="text-[11px] font-semibold uppercase tracking-widest text-white/80">
-              Disponibilidad de Red
+      <div className="relative px-5 lg:px-6 py-4 border-b" style={{ borderColor: "#1e3a5f" }}>
+        <div className="flex items-center gap-3">
+          <Image
+            src="/brand/ecos-icon-128.png"
+            alt="ECOS"
+            width={32}
+            height={32}
+            className="rounded object-contain shrink-0"
+          />
+          <div className="min-w-0 flex-1">
+            <p
+              className="text-[11px] font-semibold uppercase tracking-widest"
+              style={{ color: "#93c5fd" }}
+            >
+              {titulo}
             </p>
-            <p className="text-sm text-white/70">
-              {online} de {total} sondas activas
+            <p className="text-xs mt-0.5" style={{ color: "#94a3b8" }}>
+              {subtitulo}
             </p>
           </div>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <span
+              className={`w-2 h-2 rounded-full ${activo ? "animate-pulse" : ""}`}
+              style={{ backgroundColor: activo ? "#4ade80" : "#fbbf24" }}
+            />
+            <span
+              className="text-xs font-medium hidden sm:inline"
+              style={{ color: activo ? "#4ade80" : "#fbbf24" }}
+            >
+              {activo ? "Activo" : `Hace ${Math.round(minutosDesdeCorte)} min`}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div className="relative px-5 lg:px-6 py-6 lg:py-7">
+        <div className="flex items-end justify-between gap-6 flex-wrap">
+          <div className="flex items-baseline gap-4">
+            <span
+              className="text-6xl lg:text-7xl font-bold font-mono leading-none tracking-tight"
+              style={{ color: "#ffffff" }}
+            >
+              {valorFmt}
+            </span>
+            <div className="flex flex-col gap-0.5">
+              <p
+                className="text-[10px] font-semibold uppercase tracking-widest"
+                style={{ color: "#93c5fd" }}
+              >
+                Disponibilidad de Red
+              </p>
+              <p className="text-sm" style={{ color: "#cbd5e1" }}>
+                <span className="font-mono font-semibold text-white">{online}</span>
+                <span style={{ color: "#94a3b8" }}> de </span>
+                <span className="font-mono font-semibold text-white">{total}</span>
+                <span style={{ color: "#94a3b8" }}> sondas activas</span>
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 flex-wrap">
+            <div
+              className="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-mono"
+              style={{ backgroundColor: "#1e3a5f", color: "#93c5fd" }}
+            >
+              <span style={{ color: "#64748b" }} className="text-[10px] uppercase tracking-wider">Fecha</span>
+              <span>{formatFecha(fechaCorte)}</span>
+            </div>
+            <div
+              className="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-mono"
+              style={{ backgroundColor: "#1e3a5f", color: "#93c5fd" }}
+            >
+              <span style={{ color: "#64748b" }} className="text-[10px] uppercase tracking-wider">Corte</span>
+              <span>{formatHora(fechaCorte)}</span>
+            </div>
+            <div
+              className="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-mono"
+              style={{ backgroundColor: "#1e3a5f", color: "#93c5fd" }}
+            >
+              <span style={{ color: "#64748b" }} className="text-[10px] uppercase tracking-wider">Sitios</span>
+              <span>{total}</span>
+            </div>
+          </div>
         </div>
 
-        <div className="w-full rounded-full overflow-hidden bg-white/10 h-2.5">
+        <div
+          className="mt-5 h-1.5 w-full rounded-full overflow-hidden"
+          style={{ backgroundColor: "#0f1d32" }}
+        >
           <div
             className="h-full rounded-full transition-all"
             style={{
-              width: `${Math.min(100, Math.max(0, sla.valor))}%`,
+              width: `${pct}%`,
               background:
-                "linear-gradient(90deg, #4ade80 0%, #86efac 50%, #bbf7d0 100%)",
+                "linear-gradient(90deg, #2e6da4 0%, #4a7c8e 50%, #93c5fd 100%)",
+              boxShadow: "0 0 12px rgba(147, 197, 253, 0.4)",
             }}
           />
-        </div>
-
-        <div className="flex items-center gap-x-6 gap-y-1 flex-wrap text-xs text-white/80 pt-1">
-          <span>
-            <span className="text-white/60">Fecha: </span>
-            <span className="font-mono font-semibold text-white">
-              {formatFecha(fechaCorte)}
-            </span>
-          </span>
-          <span>
-            <span className="text-white/60">Hora corte: </span>
-            <span className="font-mono font-semibold text-white">
-              {formatHora(fechaCorte)}
-            </span>
-          </span>
-          <span>
-            <span className="text-white/60">Total sitios: </span>
-            <span className="font-mono font-semibold text-white">{total}</span>
-          </span>
         </div>
       </div>
     </div>
