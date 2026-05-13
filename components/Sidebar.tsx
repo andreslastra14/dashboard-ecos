@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams, useRouter } from "next/navigation";
-import { LayoutDashboard, Map, Zap, AlertTriangle, TicketCheck, Monitor, X, Users } from "lucide-react";
+import { LayoutDashboard, Globe, Map, Zap, AlertTriangle, TicketCheck, Monitor, X, Users } from "lucide-react";
 import type { Role } from "@/lib/roles";
 
 const baseNav = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/vista-global", label: "Vista Global", icon: Globe },
   { href: "/escuelas", label: "Mapa", icon: Map },
   { href: "/velocidad", label: "Velocidad", icon: Zap },
   { href: "/alertas", label: "Alertas", icon: AlertTriangle },

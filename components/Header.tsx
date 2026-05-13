@@ -6,6 +6,7 @@ import { LogOut, FileDown, RefreshCw, Monitor, X, Search } from "lucide-react";
 import { logout } from "@/app/actions/auth";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { ReportModal } from "./ReportModal";
+import { Printer } from "lucide-react";
 
 function LiveDate() {
   const [date, setDate] = useState("");
@@ -177,14 +178,25 @@ function MobileSondaFilter({ devices, sondaFija }: { devices: DeviceOption[]; so
 
 export function Header({ userName, canGenerateReport, userZona, devices = [], sondaFija }: HeaderProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const [reportOpen, setReportOpen] = useState(false);
   const [spinning, setSpinning] = useState(false);
+
+  const isDashboardSla = pathname === "/";
 
   const handleRefresh = useCallback(() => {
     setSpinning(true);
     router.refresh();
     setTimeout(() => setSpinning(false), 1000);
   }, [router]);
+
+  const handleReportClick = useCallback(() => {
+    if (isDashboardSla) {
+      window.print();
+    } else {
+      setReportOpen(true);
+    }
+  }, [isDashboardSla]);
 
   return (
     <>
@@ -225,13 +237,13 @@ export function Header({ userName, canGenerateReport, userZona, devices = [], so
 
           {canGenerateReport && (
             <button
-              onClick={() => setReportOpen(true)}
-              className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all hover:brightness-110"
+              onClick={handleReportClick}
+              className="no-print inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all hover:brightness-110"
               style={{ backgroundColor: "#1e3a5f", color: "#93c5fd" }}
-              title="Generar Reporte PDF"
+              title={isDashboardSla ? "Imprimir Reporte SLA" : "Generar Reporte PDF"}
             >
-              <FileDown className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Reporte</span>
+              {isDashboardSla ? <Printer className="w-3.5 h-3.5" /> : <FileDown className="w-3.5 h-3.5" />}
+              <span className="hidden sm:inline">{isDashboardSla ? "Imprimir SLA" : "Reporte"}</span>
             </button>
           )}
 
