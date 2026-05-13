@@ -8,11 +8,17 @@ Dashboard de monitoreo de conectividad para escuelas del Ministerio de Educació
 
 ## URLs
 
-- Producción: https://ecos-dashboard.vercel.app
-- Proyecto Vercel: `ecos-dashboard` (scope `operaciones-6942s-projects`, team `team_MT7XNTxrogsR4HX0ENKbRW0M`)
+- **Producción oficial**: https://dashboard-ecos-mined.vercel.app
+- **Proyecto Vercel oficial**: `dashboard-ecos-mined` (scope `operaciones-6942s-projects`, team `team_MT7XNTxrogsR4HX0ENKbRW0M`, cuenta `rapidnet` / `operaciones@rapidnetsv.net`)
+- Deploy: vía CLI `npx vercel deploy --prod --token <token>` desde `dashboard-ecos/` (no hay auto-deploy desde GitHub).
 - Repo GitHub: https://github.com/andreslastra14/dashboard-ecos (rama principal `ecos-mined-db`)
 - Portal NOC externo (gestión de casos): https://ecos-noc-portal-743427305494.us-central1.run.app
 - Repo de sondas: https://github.com/Proyecto-ECOS/Proyecto-ECOS
+
+### Deployments anteriores (NO USAR)
+
+- `ecos-dashboard.vercel.app` (proyecto Vercel `ecos-dashboard`, mismo scope) — quedó con token SAML restringido. Se reemplazó por `dashboard-ecos-mined`.
+- `dashboard-ecos.vercel.app` (cuenta personal `andreslastra14`) — legacy del demo inicial.
 
 ## Stack
 
