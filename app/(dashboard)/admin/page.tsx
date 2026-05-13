@@ -1,6 +1,6 @@
 import { getSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { getAllUsers } from "@/lib/usuarios";
+import { getAllUsers, getUserById } from "@/lib/usuarios";
 import { ROLES } from "@/lib/roles";
 import { deleteUserAction } from "@/app/actions/usuarios";
 import Link from "next/link";
@@ -10,7 +10,10 @@ export const revalidate = 0;
 
 export default async function AdminPage() {
   const session = await getSession();
-  if (!session || session.role !== "admin") redirect("/");
+  if (!session) redirect("/login");
+  // Refrescar rol contra DB — la cookie JWT puede tener un role staleado
+  const fresh = await getUserById(session.userId).catch(() => null);
+  if (!fresh || fresh.role !== "admin") redirect("/");
 
   const users = await getAllUsers();
 

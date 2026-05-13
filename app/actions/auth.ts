@@ -17,7 +17,16 @@ export async function login(
     return { error: "Usuario y contraseña son requeridos." };
   }
 
-  const user = await authenticateUser(email, password);
+  let user;
+  try {
+    user = await authenticateUser(email, password);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("[login] authenticateUser falló:", err);
+    // Devolver el error real en vez de dejarlo bubblear al error boundary —
+    // así el usuario ve el problema concreto (tabla, columna, conexión, etc.)
+    return { error: `DB error: ${msg.slice(0, 300)}` };
+  }
   if (!user) {
     return { error: "Credenciales incorrectas." };
   }

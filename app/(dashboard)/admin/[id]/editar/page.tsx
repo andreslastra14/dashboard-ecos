@@ -11,7 +11,9 @@ export default async function EditarUsuarioPage({
   params: Promise<{ id: string }>;
 }) {
   const session = await getSession();
-  if (!session || session.role !== "admin") redirect("/");
+  if (!session) redirect("/login");
+  const me = await getUserById(session.userId).catch(() => null);
+  if (!me || me.role !== "admin") redirect("/");
 
   const { id } = await params;
   const user = await getUserById(id);

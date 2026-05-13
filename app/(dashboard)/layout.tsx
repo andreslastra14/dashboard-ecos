@@ -3,6 +3,7 @@ import { Header } from "@/components/Header";
 import { getDispositivos, getEscuelas } from "@/lib/queries";
 import { getSession } from "@/lib/auth";
 import { ROLES } from "@/lib/roles";
+import { getUserById } from "@/lib/usuarios";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
@@ -26,25 +27,33 @@ export default async function DashboardLayout({
   const session = await getSession();
   if (!session) redirect("/login");
 
+  // Refrescar rol desde DB en cada request — la cookie JWT puede tener un
+  // role viejo si el cargo cambió en DB después del login (cookie dura 7d).
+  // Si el usuario fue eliminado o desactivado, expulsar la sesión.
+  const fresh = await getUserById(session.userId).catch(() => null);
+  if (!fresh || !fresh.activo) redirect("/login");
+  const role = fresh.role;
+  const nombre = fresh.nombre || session.nombre;
+
   const devices = await getDeviceList();
 
   // For maestro role, only show their assigned device
-  const filteredDevices = session.role === "maestro" && session.sondaAsignada
+  const filteredDevices = role === "maestro" && session.sondaAsignada
     ? devices.filter((d) => d.id === session.sondaAsignada)
     : devices;
 
   return (
     <>
       <Header
-        userName={session.nombre}
-        canGenerateReport={ROLES[session.role].canGenerateReports}
-        userZona={session.role === "supervisor" ? session.zonaAsignada : null}
+        userName={nombre}
+        canGenerateReport={ROLES[role].canGenerateReports}
+        userZona={role === "supervisor" ? session.zonaAsignada : null}
         devices={filteredDevices}
         sondaFija={session.sondaAsignada}
       />
       <div className="flex flex-1 overflow-hidden">
         <Suspense fallback={null}>
-          <Sidebar devices={filteredDevices} userRole={session.role} sondaFija={session.sondaAsignada} />
+          <Sidebar devices={filteredDevices} userRole={role} sondaFija={session.sondaAsignada} />
         </Suspense>
         <main className="flex-1 overflow-y-auto p-4 lg:p-6 pb-20 lg:pb-6">{children}</main>
       </div>

@@ -1,7 +1,7 @@
 "use server";
 
 import { getSession } from "@/lib/auth";
-import { createUser, updateUser, deleteUser } from "@/lib/usuarios";
+import { createUser, updateUser, deleteUser, getUserById } from "@/lib/usuarios";
 import type { Role } from "@/lib/roles";
 import { redirect } from "next/navigation";
 
@@ -9,7 +9,10 @@ export type UserFormState = { error?: string; success?: boolean } | undefined;
 
 async function requireAdmin() {
   const session = await getSession();
-  if (!session || session.role !== "admin") {
+  if (!session) throw new Error("No autorizado");
+  // Verificar contra DB (el role en la cookie puede estar staleado)
+  const fresh = await getUserById(session.userId).catch(() => null);
+  if (!fresh || fresh.role !== "admin") {
     throw new Error("No autorizado");
   }
   return session;
