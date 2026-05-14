@@ -161,6 +161,8 @@ export default async function Home({ searchParams }: PageProps) {
       download_mbps: d.download_mbps,
       eth_download_mbps: d.eth_download_mbps,
       wifi_download_mbps: d.wifi_download_mbps,
+      eth_latencia_ms: d.eth_latencia_ms,
+      wifi_latencia_ms: d.wifi_latencia_ms,
       ups_status: d.ups_status,
       web_check_mined: d.web_check_mined,
       web_check_adultos: d.web_check_adultos,
@@ -303,17 +305,17 @@ export default async function Home({ searchParams }: PageProps) {
           <div className="flex items-center justify-between px-4 pt-4 pb-3 shrink-0">
             <p className={TITLE}>Infraestructura de Red — El Salvador</p>
             <div className="flex items-center gap-3 text-xs text-slate-500">
-              <span className="flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-green-400 inline-block" />{" "}
-                En linea
+              <span className="flex items-center gap-1" title="Latencia 1–200 ms">
+                <span className="w-2 h-2 rounded-full bg-green-500 inline-block" />{" "}
+                Normal
               </span>
-              <span className="flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-amber-400 inline-block" />{" "}
-                UPS
+              <span className="flex items-center gap-1" title="Latencia mayor a 200 ms">
+                <span className="w-2 h-2 rounded-full bg-amber-500 inline-block" />{" "}
+                Alta latencia
               </span>
-              <span className="flex items-center gap-1">
+              <span className="flex items-center gap-1" title="Sondas apagadas o sin medición">
                 <span className="w-2 h-2 rounded-full bg-red-500 inline-block" />{" "}
-                Offline
+                Sin señal
               </span>
             </div>
           </div>

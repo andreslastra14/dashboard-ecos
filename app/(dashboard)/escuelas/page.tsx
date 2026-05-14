@@ -53,6 +53,8 @@ export default async function EscuelasPage({
       download_mbps: d.download_mbps ?? 0,
       eth_download_mbps: d.eth_download_mbps ?? 0,
       wifi_download_mbps: d.wifi_download_mbps ?? 0,
+      eth_latencia_ms: d.eth_latencia_ms ?? 0,
+      wifi_latencia_ms: d.wifi_latencia_ms ?? 0,
       ups_status: d.ups_status ?? "—",
       ups_nivel: d.ups_nivel ?? 0,
       web_check_mined: d.web_check_mined ?? "—",
@@ -90,8 +92,17 @@ export default async function EscuelasPage({
     : undefined;
   const mapZoom = dept ? 10 : undefined;
 
-  const ok = sondas.filter((s) => s.online).length;
-  const offline = sondas.filter((s) => !s.online).length;
+  // Stats por latencia (refleja los colores del marker en el mapa)
+  const latBuckets = sondas.reduce(
+    (acc, s) => {
+      const lat = Math.max(s.eth_latencia_ms, s.wifi_latencia_ms);
+      if (lat === 0) acc.sinMedicion++;
+      else if (lat <= 200) acc.normal++;
+      else acc.alta++;
+      return acc;
+    },
+    { normal: 0, alta: 0, sinMedicion: 0 },
+  );
 
   // Prepare map data for SchoolMapWrapper
   const mapMarkers = sondas.map((s) => ({
@@ -103,6 +114,8 @@ export default async function EscuelasPage({
     download_mbps: s.download_mbps,
     eth_download_mbps: s.eth_download_mbps,
     wifi_download_mbps: s.wifi_download_mbps,
+    eth_latencia_ms: s.eth_latencia_ms,
+    wifi_latencia_ms: s.wifi_latencia_ms,
     ups_status: s.ups_status,
     web_check_mined: s.web_check_mined,
     web_check_adultos: "",
@@ -115,14 +128,18 @@ export default async function EscuelasPage({
           <h1 className="text-2xl font-bold text-gray-900">Mapa de Escuelas</h1>
           <p className="text-sm text-gray-500 mt-1">Ubicacion y estado de cada dispositivo activo</p>
         </div>
-        <div className="flex items-center gap-3 text-sm">
-          <span className="flex items-center gap-1.5">
+        <div className="flex items-center gap-3 text-sm flex-wrap">
+          <span className="flex items-center gap-1.5" title="Latencia entre 1 y 200 ms">
             <span className="w-3 h-3 rounded-full bg-green-500 inline-block" />
-            {ok} Online
+            {latBuckets.normal} Normal
           </span>
-          <span className="flex items-center gap-1.5">
+          <span className="flex items-center gap-1.5" title="Latencia mayor a 200 ms">
+            <span className="w-3 h-3 rounded-full inline-block" style={{ backgroundColor: "#f59e0b" }} />
+            {latBuckets.alta} Alta latencia
+          </span>
+          <span className="flex items-center gap-1.5" title="Sondas apagadas o sin medición">
             <span className="w-3 h-3 rounded-full bg-red-600 inline-block" />
-            {offline} Offline
+            {latBuckets.sinMedicion} Sin señal
           </span>
         </div>
       </div>
