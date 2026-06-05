@@ -63,7 +63,9 @@ async function createPool(): Promise<Pool> {
       // bajo carga normal de monitoreo).
       max: 3,
       idleTimeoutMillis: 30_000,
-      connectionTimeoutMillis: 20_000,
+      // 8s: si la BD no responde, fallar rápido para que las páginas degraden
+      // (los try/catch devuelven []/null) en vez de colgarse y dar sensación de caída.
+      connectionTimeoutMillis: 8_000,
     });
   }
 
@@ -83,7 +85,7 @@ async function createPool(): Promise<Pool> {
     ssl: { rejectUnauthorized: false },
     max: 3,
     idleTimeoutMillis: 30_000,
-    connectionTimeoutMillis: 20_000,
+    connectionTimeoutMillis: 8_000,
   });
 }
 

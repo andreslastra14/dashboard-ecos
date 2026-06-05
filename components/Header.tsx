@@ -121,7 +121,7 @@ function MobileSondaFilter({ devices, sondaFija }: { devices: DeviceOption[]; so
             </div>
 
             {/* Options */}
-            <div className="px-4 pb-4 space-y-1 overflow-y-auto max-h-[50vh]">
+            <div className="px-4 pb-4 space-y-1 overflow-y-auto max-h-[50vh] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-600" style={{ scrollbarWidth: "thin", scrollbarColor: "#475569 transparent" }}>
               {/* Clear filter option */}
               <button
                 onClick={() => selectSonda("")}

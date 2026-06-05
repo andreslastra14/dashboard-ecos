@@ -118,7 +118,7 @@ function DesktopSondaFilter({
           </div>
 
           {/* Lista */}
-          <div className="max-h-60 overflow-y-auto py-1">
+          <div className="max-h-60 overflow-y-auto py-1 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-600" style={{ scrollbarWidth: "thin", scrollbarColor: "#475569 transparent" }}>
             <button
               type="button"
               onClick={() => pick("")}
@@ -198,8 +198,9 @@ export function Sidebar({ devices = [], userRole, sondaFija }: { devices?: Devic
     if (val) params.set("sonda", val);
     else params.delete("sonda");
     const qs = params.toString();
+    // push ya re-renderiza el Server Component con los nuevos searchParams.
+    // (sin router.refresh() extra que duplicaba la consulta y hacía lento el filtro)
     router.push(qs ? `${pathname}?${qs}` : pathname);
-    router.refresh();
   }
 
   return (
