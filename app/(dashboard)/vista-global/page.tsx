@@ -20,11 +20,11 @@ import { KpiCard } from "@/components/KpiCard";
 import {
   Wifi,
   Download,
-  Gauge,
-  TicketCheck,
+  Meter as Gauge,
+  Tag as TicketCheck,
   BatteryFull,
-  ShieldCheck,
-} from "lucide-react";
+  SecurityServices as ShieldCheck,
+} from "@carbon/icons-react";
 
 export const revalidate = 60;
 

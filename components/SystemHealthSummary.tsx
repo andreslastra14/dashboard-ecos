@@ -1,6 +1,6 @@
 "use client";
 
-import { Cpu, MemoryStick, Thermometer, BatteryFull, Network, Wifi } from "lucide-react";
+import { Chip as Cpu, Chip as MemoryStick, Temperature as Thermometer, BatteryFull, Network_3 as Network, Wifi } from "@carbon/icons-react";
 
 export interface SystemHealthData {
   avgCpu: number;
@@ -40,7 +40,7 @@ function HealthBar({ label, value, unit, icon: Icon, max, threshold, alert, coun
         className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
         style={{ backgroundColor: `${color}14` }}
       >
-        <Icon className="w-4 h-4" style={{ color }} />
+        <Icon size={16} style={{ color }} />
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between mb-1">

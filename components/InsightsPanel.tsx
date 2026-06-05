@@ -1,15 +1,15 @@
 "use client";
 
 import {
-  TrendingDown,
-  TrendingUp,
-  AlertTriangle,
-  Globe,
-  ShieldOff,
-  BatteryWarning,
-  Zap,
-} from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+  ArrowDown as TrendingDown,
+  ArrowUp as TrendingUp,
+  WarningAlt as AlertTriangle,
+  Earth as Globe,
+  Security as ShieldOff,
+  BatteryLow as BatteryWarning,
+  Flash as Zap,
+} from "@carbon/icons-react";
+import type { CarbonIconType } from "@carbon/icons-react";
 
 export interface InsightsData {
   filtroBypassCount: number;
@@ -23,7 +23,7 @@ export interface InsightsData {
 }
 
 interface InsightItem {
-  icon: LucideIcon;
+  icon: CarbonIconType;
   label: string;
   value: string;
   detail: string;
@@ -107,7 +107,7 @@ export function InsightsPanel({ data }: { data: InsightsData }) {
               className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
               style={{ backgroundColor: `${color}14` }}
             >
-              <Icon className="w-4 h-4" style={{ color }} />
+              <Icon size={16} style={{ color }} />
             </div>
           </div>
 
@@ -116,11 +116,6 @@ export function InsightsPanel({ data }: { data: InsightsData }) {
           </p>
 
           <p className="text-xs text-slate-400">{detail}</p>
-
-          <div
-            className="absolute bottom-0 left-0 right-0 h-[3px] rounded-b-xl"
-            style={{ backgroundColor: color, opacity: 0.6 }}
-          />
         </div>
       ))}
     </div>

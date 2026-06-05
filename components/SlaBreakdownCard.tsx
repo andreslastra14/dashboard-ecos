@@ -1,4 +1,4 @@
-import { CheckCircle2 } from "lucide-react";
+import { CheckmarkFilled } from "@carbon/icons-react";
 
 interface BreakdownItem {
   label: string;
@@ -77,7 +77,7 @@ export function SlaBreakdownCard({
         style={{ borderColor: "#e2e8f0" }}
       >
         <span className="text-xs flex items-center gap-1.5" style={{ color: "#64748b" }}>
-          <CheckCircle2 className="w-3.5 h-3.5" style={{ color: "#1e3a5f" }} />
+          <CheckmarkFilled size={14} style={{ color: "#1e3a5f" }} />
           {totalLabel}
         </span>
         <span

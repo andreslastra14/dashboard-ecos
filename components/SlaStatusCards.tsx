@@ -1,4 +1,4 @@
-import { CheckCircle2, WifiOff } from "lucide-react";
+import { CheckmarkFilled, WifiOff } from "@carbon/icons-react";
 
 interface SlaStatusCardsProps {
   normal: number;
@@ -42,13 +42,9 @@ export function SlaStatusCards({ normal, offline }: SlaStatusCardsProps) {
             className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
             style={{ backgroundColor: "#1e3a5f14" }}
           >
-            <CheckCircle2 className="w-5 h-5" style={{ color: "#1e3a5f" }} />
+            <CheckmarkFilled size={20} style={{ color: "#1e3a5f" }} />
           </div>
         </div>
-        <div
-          className="absolute bottom-0 left-0 right-0 h-[3px]"
-          style={{ backgroundColor: "#1e3a5f", opacity: 0.6 }}
-        />
       </div>
 
       <div
@@ -86,15 +82,11 @@ export function SlaStatusCards({ normal, offline }: SlaStatusCardsProps) {
             style={{ backgroundColor: offline > 0 ? "#b91c1c14" : "#94a3b814" }}
           >
             <WifiOff
-              className="w-5 h-5"
+              size={20}
               style={{ color: offline > 0 ? "#b91c1c" : "#94a3b8" }}
             />
           </div>
         </div>
-        <div
-          className="absolute bottom-0 left-0 right-0 h-[3px]"
-          style={{ backgroundColor: offline > 0 ? "#b91c1c" : "#94a3b8", opacity: 0.6 }}
-        />
       </div>
     </div>
   );

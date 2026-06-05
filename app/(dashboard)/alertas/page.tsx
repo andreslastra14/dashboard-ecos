@@ -1,14 +1,14 @@
 import { getDispositivos, getEscuelas } from "@/lib/queries";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  ShieldCheck,
-  ShieldOff,
-  Battery,
-  Cpu,
-  HardDrive,
-  Thermometer,
-  MemoryStick,
-} from "lucide-react";
+  SecurityServices as ShieldCheck,
+  Security as ShieldOff,
+  BatteryHalf as Battery,
+  Chip as Cpu,
+  DataBase as HardDrive,
+  Temperature as Thermometer,
+  Chip as MemoryStick,
+} from "@carbon/icons-react";
 
 export const revalidate = 60;
 
@@ -71,7 +71,7 @@ export default async function AlertasPage({ searchParams }: PageProps) {
         <Card className="rounded-2xl shadow-sm border bg-white" style={{ borderColor: "#e2e8f0" }}>
           <CardContent className="flex items-center gap-3 p-4">
             <div className="flex items-center justify-center w-10 h-10 rounded-lg" style={{ backgroundColor: "#16a34a15" }}>
-              <ShieldCheck className="w-5 h-5" style={{ color: "#16a34a" }} />
+              <ShieldCheck size={20} style={{ color: "#16a34a" }} />
             </div>
             <div>
               <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">Filtro OK</p>
@@ -82,7 +82,7 @@ export default async function AlertasPage({ searchParams }: PageProps) {
         <Card className="rounded-2xl shadow-sm border bg-white" style={{ borderColor: "#e2e8f0" }}>
           <CardContent className="flex items-center gap-3 p-4">
             <div className="flex items-center justify-center w-10 h-10 rounded-lg" style={{ backgroundColor: "#b91c1c15" }}>
-              <ShieldOff className="w-5 h-5" style={{ color: "#b91c1c" }} />
+              <ShieldOff size={20} style={{ color: "#b91c1c" }} />
             </div>
             <div>
               <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">Filtro Falla</p>
@@ -93,7 +93,7 @@ export default async function AlertasPage({ searchParams }: PageProps) {
         <Card className="rounded-2xl shadow-sm border bg-white" style={{ borderColor: "#e2e8f0" }}>
           <CardContent className="flex items-center gap-3 p-4">
             <div className="flex items-center justify-center w-10 h-10 rounded-lg" style={{ backgroundColor: "#2e6da415" }}>
-              <Battery className="w-5 h-5" style={{ color: "#2e6da4" }} />
+              <Battery size={20} style={{ color: "#2e6da4" }} />
             </div>
             <div>
               <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">UPS Conectadas</p>
@@ -104,7 +104,7 @@ export default async function AlertasPage({ searchParams }: PageProps) {
         <Card className="rounded-2xl shadow-sm border bg-white" style={{ borderColor: "#e2e8f0" }}>
           <CardContent className="flex items-center gap-3 p-4">
             <div className="flex items-center justify-center w-10 h-10 rounded-lg" style={{ backgroundColor: "#1e3a5f15" }}>
-              <Cpu className="w-5 h-5" style={{ color: "#1e3a5f" }} />
+              <Cpu size={20} style={{ color: "#1e3a5f" }} />
             </div>
             <div>
               <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">Dispositivos</p>
@@ -210,16 +210,16 @@ export default async function AlertasPage({ searchParams }: PageProps) {
                 <tr className="border-b border-gray-100 text-left text-xs text-gray-500 uppercase tracking-wide">
                   <th className="px-4 py-3">Escuela</th>
                   <th className="px-4 py-3">
-                    <span className="flex items-center gap-1"><Cpu className="w-3.5 h-3.5" /> CPU</span>
+                    <span className="flex items-center gap-1"><Cpu size={14} /> CPU</span>
                   </th>
                   <th className="px-4 py-3">
-                    <span className="flex items-center gap-1"><MemoryStick className="w-3.5 h-3.5" /> RAM</span>
+                    <span className="flex items-center gap-1"><MemoryStick size={14} /> RAM</span>
                   </th>
                   <th className="px-4 py-3">
-                    <span className="flex items-center gap-1"><HardDrive className="w-3.5 h-3.5" /> Disco</span>
+                    <span className="flex items-center gap-1"><HardDrive size={14} /> Disco</span>
                   </th>
                   <th className="px-4 py-3">
-                    <span className="flex items-center gap-1"><Thermometer className="w-3.5 h-3.5" /> Temp.</span>
+                    <span className="flex items-center gap-1"><Thermometer size={14} /> Temp.</span>
                   </th>
                 </tr>
               </thead>
@@ -264,7 +264,7 @@ function WebCheckBadge({ value, expectBlocked }: { value: string; expectBlocked:
 
   return (
     <span className={`flex items-center gap-1.5 text-xs font-medium ${isGood ? "text-green-700" : "text-red-600"}`}>
-      <Icon className="w-3.5 h-3.5" />
+      <Icon size={14} />
       {value}
     </span>
   );

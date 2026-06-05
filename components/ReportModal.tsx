@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { X, FileDown, Check, CalendarDays, Map, Monitor, Search } from "lucide-react";
+import { Close as X, DocumentDownload as FileDown, Checkmark as Check, Calendar as CalendarDays, Map, Screen as Monitor, Search } from "@carbon/icons-react";
 
 const DEPARTAMENTOS = [
   "Ahuachapan", "Santa Ana", "Sonsonate", "Chalatenango", "La Libertad",
@@ -189,11 +189,11 @@ export function ReportModal({ open, onClose, userZona }: Props) {
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: "#1e3a5f" }}>
           <div className="flex items-center gap-2">
-            <FileDown className="w-5 h-5" style={{ color: "#93c5fd" }} />
+            <FileDown size={20} style={{ color: "#93c5fd" }} />
             <h2 className="text-base font-bold" style={{ color: "#e2e8f0" }}>Generar Reporte PDF</h2>
           </div>
           <button onClick={onClose} className="p-1 rounded-md hover:bg-white/10 transition-colors">
-            <X className="w-5 h-5" style={{ color: "#94a3b8" }} />
+            <X size={20} style={{ color: "#94a3b8" }} />
           </button>
         </div>
 
@@ -201,7 +201,7 @@ export function ReportModal({ open, onClose, userZona }: Props) {
           {/* Date range */}
           <div>
             <div className="flex items-center gap-1.5 mb-3">
-              <CalendarDays className="w-4 h-4" style={{ color: "#64748b" }} />
+              <CalendarDays size={16} style={{ color: "#64748b" }} />
               <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "#64748b" }}>
                 Periodo
               </span>
@@ -265,7 +265,7 @@ export function ReportModal({ open, onClose, userZona }: Props) {
                     : { backgroundColor: "#0a1628", color: "#64748b" }
                 }
               >
-                <Map className="w-3.5 h-3.5" />
+                <Map size={14} />
                 Por Zona
               </button>
               <button
@@ -277,7 +277,7 @@ export function ReportModal({ open, onClose, userZona }: Props) {
                     : { backgroundColor: "#0a1628", color: "#64748b" }
                 }
               >
-                <Monitor className="w-3.5 h-3.5" />
+                <Monitor size={14} />
                 Por Sonda
               </button>
             </div>
@@ -329,7 +329,7 @@ export function ReportModal({ open, onClose, userZona }: Props) {
                             : { backgroundColor: "#0a1628", border: "1px solid #1e3a5f" }
                         }
                       >
-                        {selected && <Check className="w-3 h-3 text-white" />}
+                        {selected && <Check size={12} className="text-white" />}
                       </div>
                       {zone}
                     </button>
@@ -357,7 +357,7 @@ export function ReportModal({ open, onClose, userZona }: Props) {
 
               {/* Search */}
               <div className="relative mb-3">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5" style={{ color: "#64748b" }} />
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "#64748b" }} />
                 <input
                   type="text"
                   placeholder="Buscar escuela o serial..."
@@ -390,7 +390,7 @@ export function ReportModal({ open, onClose, userZona }: Props) {
                             : { backgroundColor: "#0a1628", border: "1px solid #1e3a5f" }
                         }
                       >
-                        {selected && <Check className="w-3 h-3 text-white" />}
+                        {selected && <Check size={12} className="text-white" />}
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="truncate">{d.nombre}</p>
@@ -420,7 +420,7 @@ export function ReportModal({ open, onClose, userZona }: Props) {
             className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white transition-all disabled:opacity-40"
             style={{ backgroundColor: "#1e3a5f" }}
           >
-            <FileDown className="w-4 h-4" />
+            <FileDown size={16} />
             {loading ? "Generando..." : "Descargar PDF"}
           </button>
         </div>

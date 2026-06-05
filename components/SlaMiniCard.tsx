@@ -1,10 +1,10 @@
-import type { LucideIcon } from "lucide-react";
+import type { CarbonIconType } from "@carbon/icons-react";
 import type { SlaResult } from "@/lib/sla";
 
 interface SlaMiniCardProps {
   label: string;
   sla: SlaResult;
-  icon: LucideIcon;
+  icon: CarbonIconType;
   fuente?: string;
 }
 
@@ -69,7 +69,7 @@ export function SlaMiniCard({ label, sla, icon: Icon, fuente }: SlaMiniCardProps
           className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
           style={{ backgroundColor: `${color}14` }}
         >
-          <Icon className="w-4 h-4" style={{ color }} />
+          <Icon size={16} style={{ color }} />
         </div>
       </div>
 
@@ -95,11 +95,6 @@ export function SlaMiniCard({ label, sla, icon: Icon, fuente }: SlaMiniCardProps
         </span>
         {fuente && <span className="text-right truncate ml-2">{fuente}</span>}
       </div>
-
-      <div
-        className="absolute bottom-0 left-0 right-0 h-[3px] rounded-b-xl"
-        style={{ backgroundColor: color, opacity: 0.7 }}
-      />
     </div>
   );
 }

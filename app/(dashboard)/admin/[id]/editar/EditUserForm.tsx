@@ -3,7 +3,7 @@
 import { useActionState } from "react";
 import { updateUserAction, type UserFormState } from "@/app/actions/usuarios";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "@carbon/icons-react";
 import { useState } from "react";
 import type { Role } from "@/lib/roles";
 
@@ -24,7 +24,7 @@ export default function EditUserForm({ user }: Props) {
     <div className="max-w-lg mx-auto space-y-6">
       <div className="flex items-center gap-3">
         <Link href="/admin" className="p-1.5 rounded-md hover:bg-gray-100 transition-colors">
-          <ArrowLeft className="w-5 h-5 text-gray-500" />
+          <ArrowLeft size={20} className="text-gray-500" />
         </Link>
         <h1 className="text-xl font-bold" style={{ color: "#1e3a5f" }}>Editar Usuario</h1>
       </div>

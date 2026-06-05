@@ -3,10 +3,10 @@
 import Link from "next/link";
 import { useState, useMemo, useRef, useEffect } from "react";
 import { usePathname, useSearchParams, useRouter } from "next/navigation";
-import { LayoutDashboard, Globe, Map, Zap, AlertTriangle, TicketCheck, Monitor, X, Users, Search, ChevronDown, type LucideIcon } from "lucide-react";
+import { Dashboard as LayoutDashboard, Earth as Globe, Map, Flash as Zap, WarningAlt as AlertTriangle, Tag as TicketCheck, Screen as Monitor, Close as X, Group as Users, Search, ChevronDown, type CarbonIconType } from "@carbon/icons-react";
 import type { Role } from "@/lib/roles";
 
-type NavItem = { href: string; label: string; icon: LucideIcon; disabled?: boolean };
+type NavItem = { href: string; label: string; icon: CarbonIconType; disabled?: boolean };
 
 const baseNav: NavItem[] = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -79,7 +79,7 @@ function DesktopSondaFilter({
   return (
     <div className="mx-3 mt-4 pt-3 border-t" style={{ borderColor: "#1e3a5f" }} ref={ref}>
       <div className="flex items-center gap-1.5 mb-2">
-        <Monitor className="w-3.5 h-3.5" style={{ color: "#64748b" }} />
+        <Monitor size={14} style={{ color: "#64748b" }} />
         <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "#64748b" }}>
           Filtrar Sonda
         </span>
@@ -93,7 +93,7 @@ function DesktopSondaFilter({
         style={{ backgroundColor: "#0f1d32", color: selectedDevice ? "#cbd5e1" : "#64748b", borderColor: "#1e3a5f" }}
       >
         <span className="truncate text-left">{selectedDevice?.nombre || "Todas las sondas"}</span>
-        <ChevronDown className="w-3.5 h-3.5 shrink-0" style={{ color: "#64748b" }} />
+        <ChevronDown size={14} className="shrink-0" style={{ color: "#64748b" }} />
       </button>
 
       {open && (
@@ -104,7 +104,7 @@ function DesktopSondaFilter({
           {/* Buscador */}
           <div className="p-1.5 border-b" style={{ borderColor: "#1e3a5f" }}>
             <div className="relative">
-              <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3" style={{ color: "#64748b" }} />
+              <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2" style={{ color: "#64748b" }} />
               <input
                 type="text"
                 autoFocus
@@ -165,7 +165,7 @@ function DesktopSondaFilter({
           className="flex items-center gap-1 mt-1.5 text-[10px] hover:underline"
           style={{ color: "#93c5fd" }}
         >
-          <X className="w-3 h-3" /> Limpiar filtro
+          <X size={12} /> Limpiar filtro
         </button>
       )}
     </div>
@@ -219,7 +219,7 @@ export function Sidebar({ devices = [], userRole, sondaFija }: { devices?: Devic
                 className="flex items-center gap-3 mx-2 px-3 py-2.5 rounded-lg text-sm font-bold cursor-not-allowed select-none"
                 style={{ color: "#475569" }}
               >
-                <Icon className="w-4 h-4 shrink-0" />
+                <Icon size={16} className="shrink-0" />
                 {label}
               </div>
             );
@@ -244,7 +244,7 @@ export function Sidebar({ devices = [], userRole, sondaFija }: { devices?: Devic
                 }
               }}
             >
-              <Icon className="w-4 h-4 shrink-0" />
+              <Icon size={16} className="shrink-0" />
               {label}
             </Link>
           );
@@ -261,7 +261,7 @@ export function Sidebar({ devices = [], userRole, sondaFija }: { devices?: Devic
         {sondaFija && devices.length > 0 && (
           <div className="mx-3 mt-4 pt-3 border-t" style={{ borderColor: "#1e3a5f" }}>
             <div className="flex items-center gap-1.5 mb-1">
-              <Monitor className="w-3.5 h-3.5" style={{ color: "#64748b" }} />
+              <Monitor size={14} style={{ color: "#64748b" }} />
               <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "#64748b" }}>
                 Mi Escuela
               </span>
@@ -292,7 +292,7 @@ export function Sidebar({ devices = [], userRole, sondaFija }: { devices?: Devic
                 className="flex-1 flex flex-col items-center py-2 gap-0.5 text-xs font-bold cursor-not-allowed select-none"
                 style={{ color: "#475569" }}
               >
-                <Icon className="w-5 h-5" />
+                <Icon size={20} />
                 <span className="text-[10px]">{label}</span>
               </div>
             );
@@ -305,7 +305,7 @@ export function Sidebar({ devices = [], userRole, sondaFija }: { devices?: Devic
               className="flex-1 flex flex-col items-center py-2 gap-0.5 text-xs font-medium transition-colors"
               style={{ color: active ? "#93c5fd" : "#64748b" }}
             >
-              <Icon className="w-5 h-5" />
+              <Icon size={20} />
               <span className="text-[10px]">{label}</span>
             </Link>
           );

@@ -5,13 +5,13 @@ import { SlaStatusCards } from "@/components/SlaStatusCards";
 import { SlaBreakdownCard } from "@/components/SlaBreakdownCard";
 import { SlaMiniCard } from "@/components/SlaMiniCard";
 import {
-  Gauge,
+  Meter,
   Timer,
-  Scale,
-  Wrench,
+  Scales,
+  Tools,
   BatteryFull,
   Radio,
-} from "lucide-react";
+} from "@carbon/icons-react";
 
 export const revalidate = 60;
 
@@ -103,7 +103,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
           <SlaMiniCard
             label="Velocidad Significativa"
             sla={sla.velocidadGiga}
-            icon={Gauge}
+            icon={Meter}
             fuente="UNICEF/ITU Giga · ≥20 Mbps"
           />
           <SlaMiniCard
@@ -115,13 +115,13 @@ export default async function DashboardPage({ searchParams }: PageProps) {
           <SlaMiniCard
             label="Cumplimiento ISP"
             sla={sla.cumplimientoIsp}
-            icon={Scale}
+            icon={Scales}
             fuente="SIGET / Defensoría del Consumidor"
           />
           <SlaMiniCard
             label="MTTR Incidentes"
             sla={sla.mttr}
-            icon={Wrench}
+            icon={Tools}
             fuente="SIGET reportes técnicos"
           />
           <SlaMiniCard

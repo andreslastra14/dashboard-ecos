@@ -1,5 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { TicketCheck } from "lucide-react";
+import { Tag } from "@carbon/icons-react";
 
 export default function TicketsPage() {
   return (
@@ -17,7 +17,7 @@ export default function TicketsPage() {
             className="flex items-center justify-center w-16 h-16 rounded-2xl"
             style={{ backgroundColor: "#1e3a5f15" }}
           >
-            <TicketCheck className="w-8 h-8" style={{ color: "#1e3a5f" }} />
+            <Tag size={32} style={{ color: "#1e3a5f" }} />
           </div>
           <div>
             <span
