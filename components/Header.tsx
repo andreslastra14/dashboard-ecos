@@ -179,10 +179,18 @@ function MobileSondaFilter({ devices, sondaFija }: { devices: DeviceOption[]; so
 export function Header({ userName, canGenerateReport, userZona, devices = [], sondaFija }: HeaderProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [reportOpen, setReportOpen] = useState(false);
   const [spinning, setSpinning] = useState(false);
 
   const isDashboardSla = pathname === "/";
+
+  // Estado del badge: si hay una sonda filtrada, refleja SU estado; si no, si hay alguna online.
+  const selectedSonda = sondaFija || searchParams.get("sonda");
+  const selectedDevice = selectedSonda ? devices.find((d) => d.id === selectedSonda) : null;
+  const sistemaActivo = selectedDevice
+    ? selectedDevice.online
+    : devices.length === 0 || devices.some((d) => d.online);
 
   const handleRefresh = useCallback(() => {
     setSpinning(true);
@@ -248,8 +256,16 @@ export function Header({ userName, canGenerateReport, userZona, devices = [], so
           )}
 
           <div className="flex items-center gap-1.5">
-            <div aria-hidden="true" className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-            <span className="text-green-400 text-xs font-medium hidden sm:inline">Activo</span>
+            <div
+              aria-hidden="true"
+              className={`w-2 h-2 rounded-full ${sistemaActivo ? "bg-green-400 animate-pulse" : "bg-red-500"}`}
+            />
+            <span
+              className="text-xs font-medium hidden sm:inline"
+              style={{ color: sistemaActivo ? "#4ade80" : "#ef4444" }}
+            >
+              {sistemaActivo ? "Activo" : "Inactivo"}
+            </span>
           </div>
           <LiveDate />
           {userName && (

@@ -38,7 +38,8 @@ export function SlaHeroCard({
   minutosDesdeCorte = 0,
 }: SlaHeroCardProps) {
   const valorFmt = `${sla.valor.toFixed(0)}%`;
-  const activo = minutosDesdeCorte < 5;
+  // Activo solo si hay al menos una sonda online (online = sondas activas).
+  const activo = online > 0;
   const pct = Math.min(100, Math.max(0, sla.valor));
 
   return (

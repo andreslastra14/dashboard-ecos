@@ -2,16 +2,19 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams, useRouter } from "next/navigation";
-import { LayoutDashboard, Globe, Map, Zap, AlertTriangle, TicketCheck, Monitor, X, Users } from "lucide-react";
+import { LayoutDashboard, Globe, Map, Zap, AlertTriangle, TicketCheck, Monitor, X, Users, type LucideIcon } from "lucide-react";
 import type { Role } from "@/lib/roles";
 
-const baseNav = [
+type NavItem = { href: string; label: string; icon: LucideIcon; disabled?: boolean };
+
+const baseNav: NavItem[] = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/vista-global", label: "Vista Global", icon: Globe },
   { href: "/escuelas", label: "Mapa", icon: Map },
   { href: "/velocidad", label: "Velocidad", icon: Zap },
   { href: "/alertas", label: "Alertas", icon: AlertTriangle },
-  { href: "/tickets", label: "Tickets", icon: TicketCheck },
+  // Tickets deshabilitado (Coming soon) hasta integrar el sistema de Salvatore
+  { href: "/tickets", label: "Tickets", icon: TicketCheck, disabled: true },
 ];
 
 interface DeviceOption {
@@ -26,7 +29,7 @@ export function Sidebar({ devices = [], userRole, sondaFija }: { devices?: Devic
   const router = useRouter();
   const selectedSonda = sondaFija || searchParams.get("sonda");
 
-  const nav = userRole === "admin"
+  const nav: NavItem[] = userRole === "admin"
     ? [...baseNav, { href: "/admin", label: "Admin", icon: Users }]
     : baseNav;
 
@@ -47,6 +50,7 @@ export function Sidebar({ devices = [], userRole, sondaFija }: { devices?: Devic
     else params.delete("sonda");
     const qs = params.toString();
     router.push(qs ? `${pathname}?${qs}` : pathname);
+    router.refresh();
   }
 
   const selectedDevice = devices.find((d) => d.id === selectedSonda);
@@ -58,7 +62,20 @@ export function Sidebar({ devices = [], userRole, sondaFija }: { devices?: Devic
         className="hidden lg:flex w-48 shrink-0 flex-col py-3 gap-0.5 border-r"
         style={{ backgroundColor: "#0a1628", borderColor: "#1e3a5f" }}
       >
-        {nav.map(({ href, label, icon: Icon }) => {
+        {nav.map(({ href, label, icon: Icon, disabled }) => {
+          if (disabled) {
+            return (
+              <div
+                key={href}
+                title="Coming soon"
+                className="flex items-center gap-3 mx-2 px-3 py-2.5 rounded-lg text-sm font-bold cursor-not-allowed select-none"
+                style={{ color: "#475569" }}
+              >
+                <Icon className="w-4 h-4 shrink-0" />
+                {label}
+              </div>
+            );
+          }
           const active = pathname === href;
           return (
             <Link
@@ -143,7 +160,20 @@ export function Sidebar({ devices = [], userRole, sondaFija }: { devices?: Devic
         className="lg:hidden fixed bottom-0 left-0 right-0 z-50 flex border-t"
         style={{ backgroundColor: "#0a1628", borderColor: "#1e3a5f" }}
       >
-        {nav.map(({ href, label, icon: Icon }) => {
+        {nav.map(({ href, label, icon: Icon, disabled }) => {
+          if (disabled) {
+            return (
+              <div
+                key={href}
+                title="Coming soon"
+                className="flex-1 flex flex-col items-center py-2 gap-0.5 text-xs font-bold cursor-not-allowed select-none"
+                style={{ color: "#475569" }}
+              >
+                <Icon className="w-5 h-5" />
+                <span className="text-[10px]">{label}</span>
+              </div>
+            );
+          }
           const active = pathname === href;
           return (
             <Link

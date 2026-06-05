@@ -3,8 +3,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   ShieldCheck,
   ShieldOff,
-  CheckCircle,
-  AlertTriangle,
   Battery,
   Cpu,
   HardDrive,
@@ -175,7 +173,6 @@ export default async function AlertasPage({ searchParams }: PageProps) {
                   <th className="px-4 py-3">Escuela</th>
                   <th className="px-4 py-3">Estado UPS</th>
                   <th className="px-4 py-3">Nivel</th>
-                  <th className="px-4 py-3">Conectada</th>
                 </tr>
               </thead>
               <tbody>
@@ -188,17 +185,11 @@ export default async function AlertasPage({ searchParams }: PageProps) {
                         {d.ups_nivel > 0 ? `${d.ups_nivel}%` : "—"}
                       </span>
                     </td>
-                    <td className="px-4 py-3">
-                      <span className={`flex items-center gap-1.5 text-xs font-medium ${d.ups_conectada ? "text-green-700" : "text-gray-500"}`}>
-                        {d.ups_conectada ? <CheckCircle className="w-3.5 h-3.5" /> : <AlertTriangle className="w-3.5 h-3.5" />}
-                        {d.ups_conectada ? "Si" : "No"}
-                      </span>
-                    </td>
                   </tr>
                 ))}
                 {devices.length === 0 && (
                   <tr>
-                    <td colSpan={4} className="px-4 py-8 text-center text-gray-400">Sin datos</td>
+                    <td colSpan={3} className="px-4 py-8 text-center text-gray-400">Sin datos</td>
                   </tr>
                 )}
               </tbody>
