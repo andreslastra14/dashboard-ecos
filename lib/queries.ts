@@ -31,7 +31,11 @@ const MASTER_COLS =
 function rowToDispositivo(r: MasterRow, webChecks: Map<string, Record<string, string>>): Dispositivo {
   const now = Date.now();
   const ts = r.fecha_registro.getTime();
-  const online = now - ts < ONLINE_WINDOW_MS;
+  // Activa solo si reportó hace poco Y tiene descarga total > 0.
+  // Si eth+wifi es <= 0 (p.ej. -1 = sin medición, o 0), se considera inactiva.
+  const reporteReciente = now - ts < ONLINE_WINDOW_MS;
+  const descargaTotal = Number(r.eth_download ?? 0) + Number(r.wifi_download ?? 0);
+  const online = reporteReciente && descargaTotal > 0;
   const checks = webChecks.get(r.sonda_id) || {};
   const seconds = Math.floor(ts / 1000);
   const nanoseconds = (ts % 1000) * 1_000_000;

@@ -92,16 +92,14 @@ export default async function EscuelasPage({
     : undefined;
   const mapZoom = dept ? 10 : undefined;
 
-  // Stats por latencia (refleja los colores del marker en el mapa)
-  const latBuckets = sondas.reduce(
+  // Stats por estado (refleja los colores del marker en el mapa: verde=activa, rojo=inactiva)
+  const estadoBuckets = sondas.reduce(
     (acc, s) => {
-      const lat = Math.max(s.eth_latencia_ms, s.wifi_latencia_ms);
-      if (lat === 0) acc.sinMedicion++;
-      else if (lat <= 200) acc.normal++;
-      else acc.alta++;
+      if (s.online) acc.activas++;
+      else acc.inactivas++;
       return acc;
     },
-    { normal: 0, alta: 0, sinMedicion: 0 },
+    { activas: 0, inactivas: 0 },
   );
 
   // Prepare map data for SchoolMapWrapper
@@ -129,17 +127,13 @@ export default async function EscuelasPage({
           <p className="text-sm text-gray-500 mt-1">Ubicacion y estado de cada dispositivo activo</p>
         </div>
         <div className="flex items-center gap-3 text-sm flex-wrap">
-          <span className="flex items-center gap-1.5" title="Latencia entre 1 y 200 ms">
+          <span className="flex items-center gap-1.5" title="Reportó hace poco y con descarga > 0">
             <span className="w-3 h-3 rounded-full bg-green-500 inline-block" />
-            {latBuckets.normal} Normal
+            {estadoBuckets.activas} Activas
           </span>
-          <span className="flex items-center gap-1.5" title="Latencia mayor a 200 ms">
-            <span className="w-3 h-3 rounded-full inline-block" style={{ backgroundColor: "#f59e0b" }} />
-            {latBuckets.alta} Alta latencia
-          </span>
-          <span className="flex items-center gap-1.5" title="Sondas apagadas o sin medición">
+          <span className="flex items-center gap-1.5" title="Sin reporte reciente o descarga total ≤ 0">
             <span className="w-3 h-3 rounded-full bg-red-600 inline-block" />
-            {latBuckets.sinMedicion} Sin señal
+            {estadoBuckets.inactivas} Inactivas
           </span>
         </div>
       </div>
