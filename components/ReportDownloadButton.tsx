@@ -1,6 +1,6 @@
 "use client";
 
-import { FileDown } from "lucide-react";
+import { DocumentDownload } from "@carbon/icons-react";
 import { useState } from "react";
 
 export function ReportDownloadButton({
@@ -43,7 +43,7 @@ export function ReportDownloadButton({
       style={{ backgroundColor: "#1e3a5f" }}
       title={zona ? `Descargar reporte de ${zona}` : "Seleccione una zona primero"}
     >
-      <FileDown className="w-3.5 h-3.5" />
+      <DocumentDownload size={14} />
       {loading ? "Generando..." : "Reporte PDF"}
     </button>
   );

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { Monitor } from "lucide-react";
+import { Screen } from "@carbon/icons-react";
 
 interface DeviceOption {
   id: string;
@@ -17,7 +17,7 @@ export function DeviceFilter({ devices }: { devices: DeviceOption[] }) {
   return (
     <div className="flex items-center gap-3 flex-wrap">
       <div className="flex items-center gap-1.5 text-sm font-medium" style={{ color: "#1e3a5f" }}>
-        <Monitor className="w-4 h-4" />
+        <Screen size={16} />
         Filtrar sonda
       </div>
       <select

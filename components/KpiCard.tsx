@@ -1,9 +1,9 @@
-import { type LucideIcon } from "lucide-react";
+import { type CarbonIconType } from "@carbon/icons-react";
 
 interface KpiCardProps {
   label: string;
   value: string;
-  icon: LucideIcon;
+  icon: CarbonIconType;
   color: string;
   description?: string;
 }
@@ -23,7 +23,7 @@ export function KpiCard({ label, value, icon: Icon, color, description }: KpiCar
           className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
           style={{ backgroundColor: `${color}14` }}
         >
-          <Icon className="w-4 h-4" style={{ color }} />
+          <Icon size={16} style={{ color }} />
         </div>
       </div>
 
@@ -34,12 +34,6 @@ export function KpiCard({ label, value, icon: Icon, color, description }: KpiCar
       {description && (
         <p className="text-xs text-slate-400">{description}</p>
       )}
-
-      {/* Bottom accent bar */}
-      <div
-        className="absolute bottom-0 left-0 right-0 h-[3px] rounded-b-xl"
-        style={{ backgroundColor: color, opacity: 0.6 }}
-      />
     </div>
   );
 }

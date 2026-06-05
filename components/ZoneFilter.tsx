@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { MapPin } from "lucide-react";
+import { Location } from "@carbon/icons-react";
 
 interface ZoneStats {
   nombre: string;
@@ -18,7 +18,7 @@ export function ZoneFilter({ stats }: { stats: ZoneStats[] }) {
   return (
     <div className="flex items-center gap-3 flex-wrap">
       <div className="flex items-center gap-1.5 text-sm font-medium" style={{ color: "#1e3a5f" }}>
-        <MapPin className="w-4 h-4" />
+        <Location size={16} />
         Filtrar por departamento
       </div>
       <select

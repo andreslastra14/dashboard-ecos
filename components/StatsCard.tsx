@@ -1,11 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { LucideIcon } from "lucide-react";
+import type { CarbonIconType } from "@carbon/icons-react";
 
 interface StatsCardProps {
   title: string;
   value: string;
   subtitle?: string;
-  icon: LucideIcon;
+  icon: CarbonIconType;
   accent?: "blue" | "green" | "orange" | "red";
 }
 
@@ -23,7 +23,7 @@ export function StatsCard({ title, value, subtitle, icon: Icon, accent = "blue" 
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-sm font-medium text-gray-600">{title}</CardTitle>
         <div className="p-2 rounded-xl" style={{ backgroundColor: colors.bg }}>
-          <Icon className="w-4 h-4" style={{ color: colors.icon }} />
+          <Icon size={16} style={{ color: colors.icon }} />
         </div>
       </CardHeader>
       <CardContent>

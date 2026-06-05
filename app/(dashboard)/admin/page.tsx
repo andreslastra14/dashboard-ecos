@@ -4,7 +4,7 @@ import { getAllUsers, getUserById } from "@/lib/usuarios";
 import { ROLES } from "@/lib/roles";
 import { deleteUserAction } from "@/app/actions/usuarios";
 import Link from "next/link";
-import { Plus, Pencil, Trash2, Shield, Check, X, GraduationCap } from "lucide-react";
+import { Add, Edit, TrashCan, Security, Checkmark, Close, Education } from "@carbon/icons-react";
 
 export const revalidate = 0;
 
@@ -36,7 +36,7 @@ export default async function AdminPage() {
           className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white transition-colors"
           style={{ backgroundColor: "#1e3a5f" }}
         >
-          <Plus className="w-4 h-4" /> Crear Usuario
+          <Add size={16} /> Crear Usuario
         </Link>
       </div>
 
@@ -61,8 +61,8 @@ export default async function AdminPage() {
                 <tr key={key} className="border-b border-gray-50 hover:bg-gray-50/50">
                   <td className="px-4 py-2.5">
                     <div className="flex items-center gap-2">
-                      {key === "maestro" && <GraduationCap className="w-4 h-4 text-amber-600" />}
-                      {key === "admin" && <Shield className="w-4 h-4" style={{ color: "#1e3a5f" }} />}
+                      {key === "maestro" && <Education size={16} className="text-amber-600" />}
+                      {key === "admin" && <Security size={16} style={{ color: "#1e3a5f" }} />}
                       <div>
                         <p className="font-medium text-gray-900">{role.label}</p>
                         <p className="text-[11px] text-gray-400 leading-tight">{role.description}</p>
@@ -73,9 +73,9 @@ export default async function AdminPage() {
                   {permLabels.map((p) => (
                     <td key={p.key} className="text-center px-3 py-2.5">
                       {role[p.key] ? (
-                        <Check className="w-4 h-4 text-green-500 mx-auto" />
+                        <Checkmark size={16} className="text-green-500 mx-auto" />
                       ) : (
-                        <X className="w-4 h-4 text-gray-300 mx-auto" />
+                        <Close size={16} className="text-gray-300 mx-auto" />
                       )}
                     </td>
                   ))}
@@ -111,8 +111,8 @@ export default async function AdminPage() {
                       color: u.role === "admin" ? "#1e3a5f" : u.role === "maestro" ? "#92400e" : "#0369a1",
                     }}
                   >
-                    {u.role === "admin" && <Shield className="w-3 h-3" />}
-                    {u.role === "maestro" && <GraduationCap className="w-3 h-3" />}
+                    {u.role === "admin" && <Security size={12} />}
+                    {u.role === "maestro" && <Education size={12} />}
                     {ROLES[u.role]?.label ?? u.role}
                   </span>
                 </td>
@@ -128,7 +128,7 @@ export default async function AdminPage() {
                       className="p-1.5 rounded-md hover:bg-gray-100 transition-colors text-gray-500 hover:text-gray-700"
                       title="Editar"
                     >
-                      <Pencil className="w-4 h-4" />
+                      <Edit size={16} />
                     </Link>
                     {u.id !== session.userId && (
                       <form action={deleteUserAction}>
@@ -138,7 +138,7 @@ export default async function AdminPage() {
                           className="p-1.5 rounded-md hover:bg-red-50 transition-colors text-gray-400 hover:text-red-600"
                           title="Eliminar"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <TrashCan size={16} />
                         </button>
                       </form>
                     )}

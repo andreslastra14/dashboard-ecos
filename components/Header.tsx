@@ -2,11 +2,11 @@
 
 import Image from "next/image";
 import { useEffect, useState, useCallback, useMemo } from "react";
-import { LogOut, FileDown, RefreshCw, Monitor, X, Search } from "lucide-react";
+import { Logout as LogOut, DocumentDownload as FileDown, Renew as RefreshCw, Screen as Monitor, Close as X, Search } from "@carbon/icons-react";
 import { logout } from "@/app/actions/auth";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { ReportModal } from "./ReportModal";
-import { Printer } from "lucide-react";
+import { Printer } from "@carbon/icons-react";
 
 function LiveDate() {
   const [date, setDate] = useState("");
@@ -78,7 +78,7 @@ function MobileSondaFilter({ devices, sondaFija }: { devices: DeviceOption[]; so
         className="lg:hidden p-1.5 rounded-md transition-colors hover:bg-white/10 relative"
         title="Filtrar por sonda"
       >
-        <Monitor className="w-4 h-4" style={{ color: selectedSonda ? "#93c5fd" : "#94a3b8" }} />
+        <Monitor size={16} style={{ color: selectedSonda ? "#93c5fd" : "#94a3b8" }} />
         {selectedSonda && (
           <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-blue-400" />
         )}
@@ -100,14 +100,14 @@ function MobileSondaFilter({ devices, sondaFija }: { devices: DeviceOption[]; so
             <div className="px-4 pb-2 flex items-center justify-between">
               <h3 className="text-sm font-bold" style={{ color: "#e2e8f0" }}>Filtrar por Sonda</h3>
               <button onClick={() => { setOpen(false); setSearch(""); }} className="p-1">
-                <X className="w-4 h-4" style={{ color: "#94a3b8" }} />
+                <X size={16} style={{ color: "#94a3b8" }} />
               </button>
             </div>
 
             {/* Search */}
             <div className="px-4 pb-3">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5" style={{ color: "#64748b" }} />
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "#64748b" }} />
                 <input
                   type="text"
                   placeholder="Buscar escuela..."
@@ -168,11 +168,11 @@ function MobileSondaFilter({ devices, sondaFija }: { devices: DeviceOption[]; so
           style={{ backgroundColor: "#0f1d32", borderColor: "#1e3a5f", color: "#93c5fd" }}
         >
           <span className="truncate">
-            <Monitor className="w-3 h-3 inline mr-1" />
+            <Monitor size={12} className="inline mr-1" />
             {selectedDevice?.nombre || selectedSonda}
           </span>
           <button onClick={() => selectSonda("")} className="shrink-0 ml-2">
-            <X className="w-3.5 h-3.5" />
+            <X size={14} />
           </button>
         </div>
       )}
@@ -239,7 +239,8 @@ export function Header({ userName, canGenerateReport, userZona, devices = [], so
             title="Actualizar datos"
           >
             <RefreshCw
-              className={`w-4 h-4 ${spinning ? "animate-spin" : ""}`}
+              size={16}
+              className={spinning ? "animate-spin" : ""}
               style={{ color: "#94a3b8" }}
             />
           </button>
@@ -254,7 +255,7 @@ export function Header({ userName, canGenerateReport, userZona, devices = [], so
               style={{ backgroundColor: "#1e3a5f", color: "#93c5fd" }}
               title={isDashboardSla ? "Imprimir Reporte SLA" : "Generar Reporte PDF"}
             >
-              {isDashboardSla ? <Printer className="w-3.5 h-3.5" /> : <FileDown className="w-3.5 h-3.5" />}
+              {isDashboardSla ? <Printer size={14} /> : <FileDown size={14} />}
               <span className="hidden sm:inline">{isDashboardSla ? "Imprimir SLA" : "Reporte"}</span>
             </button>
           )}
@@ -281,7 +282,7 @@ export function Header({ userName, canGenerateReport, userZona, devices = [], so
                   className="p-1.5 rounded-md transition-colors hover:bg-white/10"
                   title="Cerrar sesion"
                 >
-                  <LogOut className="w-4 h-4" style={{ color: "#94a3b8" }} />
+                  <LogOut size={16} style={{ color: "#94a3b8" }} />
                 </button>
               </form>
             </div>
