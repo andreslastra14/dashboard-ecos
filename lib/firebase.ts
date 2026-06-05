@@ -12,6 +12,7 @@ export interface DbTimestamp {
 export interface Dispositivo {
   id: string;
   cpu_id: string;
+  codigo_mined: string;
   id_hardware: string;
   version_sonda: string;
   online: boolean;
