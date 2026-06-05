@@ -26,10 +26,8 @@ function latenciaEfectiva(marker: MapMarker): number {
 }
 
 function markerColor(marker: MapMarker): string {
-  const lat = latenciaEfectiva(marker);
-  if (lat === 0) return "#ef4444"; // rojo — apagada o sin medición
-  if (lat <= 200) return "#22c55e"; // verde — saludable
-  return "#f59e0b"; // naranja — alta latencia
+  // Verde = activa (online), rojo = inactiva (offline).
+  return marker.online ? "#22c55e" : "#ef4444";
 }
 
 export function SchoolMap({
