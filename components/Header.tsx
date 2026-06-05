@@ -25,6 +25,7 @@ interface DeviceOption {
   id: string;
   nombre: string;
   online: boolean;
+  codigo?: string;
 }
 
 interface HeaderProps {
@@ -47,7 +48,10 @@ function MobileSondaFilter({ devices, sondaFija }: { devices: DeviceOption[]; so
     if (!search) return devices;
     const term = search.toLowerCase();
     return devices.filter(
-      (d) => d.nombre.toLowerCase().includes(term) || d.id.toLowerCase().includes(term)
+      (d) =>
+        d.nombre.toLowerCase().includes(term) ||
+        d.id.toLowerCase().includes(term) ||
+        (d.codigo ?? "").toLowerCase().includes(term)
     );
   }, [devices, search]);
 
@@ -144,7 +148,7 @@ function MobileSondaFilter({ devices, sondaFija }: { devices: DeviceOption[]; so
                 >
                   <div className="min-w-0">
                     <p className="truncate">{d.nombre}</p>
-                    <p className="text-[10px] font-mono opacity-50">{d.id}</p>
+                    <p className="text-[10px] font-mono opacity-50">{d.codigo ? `CE ${d.codigo}` : d.id}</p>
                   </div>
                   <span
                     className="w-2 h-2 rounded-full shrink-0 ml-2"

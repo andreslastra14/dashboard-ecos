@@ -15,7 +15,12 @@ async function getDeviceList() {
   return dispositivos.map((d) => {
     const cleanId = (d.cpu_id || d.id).replace(/"/g, "").trim();
     const esc = escuelas[cleanId] ?? escuelas[d.cpu_id] ?? escuelas[d.id];
-    return { id: cleanId, nombre: esc?.nombre_escuela || cleanId, online: d.online };
+    return {
+      id: cleanId,
+      nombre: esc?.nombre_escuela || cleanId,
+      online: d.online,
+      codigo: d.codigo_mined || "",
+    };
   });
 }
 

@@ -6,6 +6,7 @@ const ONLINE_WINDOW_MS = 5 * 60 * 1000;
 
 type MasterRow = {
   sonda_id: string;
+  codigo_mined: string | null;
   eth_download: number | null;
   wifi_download: number | null;
   eth_upload: number | null;
@@ -24,7 +25,7 @@ type MasterRow = {
 };
 
 const MASTER_COLS =
-  "sonda_id, eth_download, wifi_download, eth_upload, wifi_upload, " +
+  "sonda_id, codigo_mined, eth_download, wifi_download, eth_upload, wifi_upload, " +
   "latitud, longitud, gps_status, ups_estado, ups_nivel, cpu_temp, " +
   "cpu_uso, ram_uso, eth_latencia, wifi_latencia, fecha_registro";
 
@@ -50,6 +51,7 @@ function rowToDispositivo(r: MasterRow, webChecks: Map<string, Record<string, st
   return {
     id: r.sonda_id,
     cpu_id: r.sonda_id,
+    codigo_mined: r.codigo_mined ?? "",
     id_hardware: r.sonda_id,
     version_sonda: "ecos",
     online,
