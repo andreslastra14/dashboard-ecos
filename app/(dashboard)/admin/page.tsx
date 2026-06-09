@@ -4,7 +4,7 @@ import { getAllUsers, getUserById } from "@/lib/usuarios";
 import { ROLES } from "@/lib/roles";
 import { deleteUserAction } from "@/app/actions/usuarios";
 import Link from "next/link";
-import { Add, Edit, TrashCan, Security, Checkmark, Close, Education } from "@carbon/icons-react";
+import { Add, Edit, TrashCan, Security, Checkmark, Close, Education, Group } from "@carbon/icons-react";
 
 export const revalidate = 0;
 
@@ -31,13 +31,22 @@ export default async function AdminPage() {
           <h1 className="text-xl font-bold" style={{ color: "#1e3a5f" }}>Gestión de Usuarios</h1>
           <p className="text-sm text-gray-500">{users.length} usuarios registrados</p>
         </div>
-        <Link
-          href="/admin/crear"
-          className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white transition-colors"
-          style={{ backgroundColor: "#1e3a5f" }}
-        >
-          <Add size={16} /> Crear Usuario
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/admin/crear-masivo"
+            className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors border"
+            style={{ borderColor: "#1e3a5f", color: "#1e3a5f" }}
+          >
+            <Group size={16} /> Alta masiva
+          </Link>
+          <Link
+            href="/admin/crear"
+            className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white transition-colors"
+            style={{ backgroundColor: "#1e3a5f" }}
+          >
+            <Add size={16} /> Crear Usuario
+          </Link>
+        </div>
       </div>
 
       {/* Panel de roles y habilidades */}

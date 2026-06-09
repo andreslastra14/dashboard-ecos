@@ -1,8 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState, useCallback, useMemo } from "react";
-import { Logout as LogOut, DocumentDownload as FileDown, Renew as RefreshCw, Screen as Monitor, Close as X, Search } from "@carbon/icons-react";
+import Link from "next/link";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
+import { Logout as LogOut, DocumentDownload as FileDown, Renew as RefreshCw, Screen as Monitor, Close as X, Search, Settings, ChevronDown } from "@carbon/icons-react";
 import { logout } from "@/app/actions/auth";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { ReportModal } from "./ReportModal";
@@ -180,6 +181,62 @@ function MobileSondaFilter({ devices, sondaFija }: { devices: DeviceOption[]; so
   );
 }
 
+// Menú del usuario: clic en el nombre → desplegable con Configuración y Cerrar sesión.
+function UserMenu({ userName }: { userName: string }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function onClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, [open]);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="flex items-center gap-1.5 px-2 py-1.5 rounded-md transition-colors hover:bg-white/10"
+        title="Menú de usuario"
+      >
+        <span className="text-xs hidden sm:inline" style={{ color: "#cbd5e1" }}>{userName}</span>
+        <ChevronDown size={14} style={{ color: "#94a3b8" }} />
+      </button>
+
+      {open && (
+        <div
+          className="absolute right-0 mt-1 w-44 rounded-lg border shadow-xl overflow-hidden z-50"
+          style={{ backgroundColor: "#0f1d32", borderColor: "#1e3a5f" }}
+        >
+          <Link
+            href="/configuracion"
+            onClick={() => setOpen(false)}
+            className="flex items-center gap-2 px-3 py-2.5 text-sm transition-colors hover:bg-white/5"
+            style={{ color: "#cbd5e1" }}
+          >
+            <Settings size={16} style={{ color: "#94a3b8" }} />
+            Configuración
+          </Link>
+          <form action={logout} className="border-t" style={{ borderColor: "#1e3a5f" }}>
+            <button
+              type="submit"
+              className="w-full flex items-center gap-2 px-3 py-2.5 text-sm transition-colors hover:bg-white/5 text-left"
+              style={{ color: "#cbd5e1" }}
+            >
+              <LogOut size={16} style={{ color: "#94a3b8" }} />
+              Cerrar sesión
+            </button>
+          </form>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function Header({ userName, canGenerateReport, userZona, devices = [], sondaFija }: HeaderProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -273,20 +330,7 @@ export function Header({ userName, canGenerateReport, userZona, devices = [], so
             </span>
           </div>
           <LiveDate />
-          {userName && (
-            <div className="flex items-center gap-2">
-              <span className="text-xs hidden sm:inline" style={{ color: "#94a3b8" }}>{userName}</span>
-              <form action={logout}>
-                <button
-                  type="submit"
-                  className="p-1.5 rounded-md transition-colors hover:bg-white/10"
-                  title="Cerrar sesion"
-                >
-                  <LogOut size={16} style={{ color: "#94a3b8" }} />
-                </button>
-              </form>
-            </div>
-          )}
+          {userName && <UserMenu userName={userName} />}
         </div>
       </header>
 
