@@ -86,6 +86,7 @@ export interface Usuario {
   activo: boolean;
   creado: string;
   ultimo_login: string | null;
+  requiere_cambio_pwd: boolean;
 }
 
 // ── Detección automática de tabla y columnas ────────────────────────────────
@@ -102,6 +103,8 @@ interface SchemaInfo {
   roleCol: string | null;
   nombreCol: string | null; // nombre/apellido si existe distinto del email
   activoCol: string | null;
+  requiereCambioCol: string | null; // flag de "debe cambiar contraseña" (primer login)
+  fechaCambioCol: string | null;    // fecha del último cambio de contraseña
 }
 
 const TABLE_CANDIDATES = ["usuario", "usuarios_ecos", "usuarios"] as const;
@@ -110,6 +113,8 @@ const PASSWORD_CANDIDATES = ["password_hash", "clave_hash", "password", "clave",
 const ROLE_CANDIDATES = ["cargo", "rol", "role", "tipo", "perfil"] as const;
 const NOMBRE_CANDIDATES = ["nombre", "nombre_completo", "full_name", "display_name"] as const;
 const ACTIVO_CANDIDATES = ["activo", "active", "habilitado", "enabled"] as const;
+const REQUIERE_CAMBIO_CANDIDATES = ["requiere_cambio_pwd", "requiere_cambio_contrasena", "must_change_password"] as const;
+const FECHA_CAMBIO_CANDIDATES = ["fecha_ultimo_cambio_pwd", "fecha_cambio_pwd", "last_password_change"] as const;
 
 let schemaCache: SchemaInfo | null = null;
 let schemaPromise: Promise<SchemaInfo> | null = null;
@@ -166,6 +171,8 @@ async function detectSchema(): Promise<SchemaInfo> {
       roleCol: pick(ROLE_CANDIDATES),
       nombreCol: pick(NOMBRE_CANDIDATES),
       activoCol: pick(ACTIVO_CANDIDATES),
+      requiereCambioCol: pick(REQUIERE_CAMBIO_CANDIDATES),
+      fechaCambioCol: pick(FECHA_CAMBIO_CANDIDATES),
     };
     schemaCache = info;
     console.log("[usuarios] schema detectado:", info);
@@ -211,6 +218,7 @@ function rowToUsuario(r: RawRow, s: SchemaInfo): Usuario {
   const rolRaw = s.roleCol ? (r[s.roleCol] as string | null) : null;
   const nombreRaw = s.nombreCol ? (r[s.nombreCol] as string | null) : null;
   const activoRaw = s.activoCol ? r[s.activoCol] : true;
+  const requiereRaw = s.requiereCambioCol ? r[s.requiereCambioCol] : false;
   return {
     id: `u:${id}`,
     email: email.toLowerCase(),
@@ -222,6 +230,7 @@ function rowToUsuario(r: RawRow, s: SchemaInfo): Usuario {
     activo: activoRaw === false ? false : true,
     creado: new Date().toISOString(),
     ultimo_login: null,
+    requiere_cambio_pwd: requiereRaw === true,
   };
 }
 
@@ -230,6 +239,7 @@ function buildSelectCols(s: SchemaInfo): string {
   if (s.roleCol) cols.push(s.roleCol);
   if (s.nombreCol) cols.push(s.nombreCol);
   if (s.activoCol) cols.push(s.activoCol);
+  if (s.requiereCambioCol) cols.push(s.requiereCambioCol);
   return cols.map((c) => `"${c}"`).join(", ");
 }
 
@@ -293,6 +303,9 @@ export async function createUser(data: {
   role: Role;
   zona_asignada: string | null;
   sonda_asignada?: string | null;
+  // Por defecto, los usuarios creados desde el panel deben cambiar la
+  // contraseña genérica en su primer login.
+  requiereCambioPwd?: boolean;
 }): Promise<string> {
   const s = await detectSchema();
   const hash = await bcrypt.hash(data.password, 10);
@@ -305,6 +318,10 @@ export async function createUser(data: {
   if (s.nombreCol) {
     cols.push(`"${s.nombreCol}"`);
     vals.push(data.nombre);
+  }
+  if (s.requiereCambioCol) {
+    cols.push(`"${s.requiereCambioCol}"`);
+    vals.push(data.requiereCambioPwd ?? true);
   }
   const placeholders = vals.map((_, i) => `$${i + 1}`).join(", ");
   const rows = await query<{ id: number | string }>(
@@ -326,6 +343,7 @@ export async function updateUser(
     zona_asignada: string | null;
     sonda_asignada: string | null;
     activo: boolean;
+    requiereCambioPwd: boolean;
   }>,
 ): Promise<void> {
   const s = await detectSchema();
@@ -341,6 +359,19 @@ export async function updateUser(
     const hash = await bcrypt.hash(data.password, 10);
     sets.push(`"${s.passwordCol}" = $${i++}`);
     vals.push(hash);
+    // Al cambiar la contraseña, el usuario ya eligió la suya: baja el flag
+    // de cambio obligatorio y registra la fecha (si las columnas existen).
+    // Salvo que el caller fuerce explícitamente requiereCambioPwd (p.ej. admin reseteando).
+    if (s.requiereCambioCol) {
+      sets.push(`"${s.requiereCambioCol}" = $${i++}`);
+      vals.push(data.requiereCambioPwd ?? false);
+    }
+    if (s.fechaCambioCol) {
+      sets.push(`"${s.fechaCambioCol}" = NOW()`);
+    }
+  } else if (data.requiereCambioPwd !== undefined && s.requiereCambioCol) {
+    sets.push(`"${s.requiereCambioCol}" = $${i++}`);
+    vals.push(data.requiereCambioPwd);
   }
   if (sets.length === 0) return;
   vals.push(numeric);

@@ -37,6 +37,9 @@ export default async function DashboardLayout({
   // Si el usuario fue eliminado o desactivado, expulsar la sesión.
   const fresh = await getUserById(session.userId).catch(() => null);
   if (!fresh || !fresh.activo) redirect("/login");
+  // Cambio de contraseña obligatorio: si el usuario aún tiene la contraseña
+  // genérica (requiere_cambio_pwd), bloquea el dashboard hasta que la cambie.
+  if (fresh.requiere_cambio_pwd) redirect("/cambiar-password");
   const role = fresh.role;
   const nombre = fresh.nombre || session.nombre;
 
