@@ -69,6 +69,9 @@ export async function createSession(user: {
     expires: expiresAt,
     sameSite: "lax",
     path: "/",
+    // SSO: en producción la cookie vive en el dominio padre para compartirse
+    // con install.ecos-app.com (y cualquier subdominio de ecos-app.com).
+    ...(process.env.NODE_ENV === "production" ? { domain: ".ecos-app.com" } : {}),
   });
 }
 
@@ -82,6 +85,10 @@ export async function verifySession(): Promise<SessionPayload | null> {
 export async function deleteSession() {
   const cookieStore = await cookies();
   cookieStore.delete("session");
+  // limpiar también la cookie de dominio compartido (SSO)
+  if (process.env.NODE_ENV === "production") {
+    cookieStore.set("session", "", { httpOnly: true, secure: true, expires: new Date(0), sameSite: "lax", path: "/", domain: ".ecos-app.com" });
+  }
 }
 
 export const getSession = cache(verifySession);
