@@ -1,4 +1,4 @@
-import { getDispositivos, getEscuelas } from "@/lib/queries";
+import { getDispositivos, getCoordsEscuelas } from "@/lib/queries";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { SchoolMapWrapper } from "@/components/SchoolMapWrapper";
@@ -14,9 +14,9 @@ export default async function EscuelasPage({
   searchParams: Promise<{ zona?: string; sonda?: string }>;
 }) {
   const { zona, sonda: sondaParam } = await searchParams;
-  const [allDispositivos, escuelas] = await Promise.all([
+  const [allDispositivos, coordsEsc] = await Promise.all([
     getDispositivos(),
-    getEscuelas(),
+    getCoordsEscuelas(),
   ]);
 
   const dispositivos = sondaParam
@@ -26,26 +26,20 @@ export default async function EscuelasPage({
       })
     : allDispositivos;
 
-  // Demo coordinates for devices without GPS
-  const DEMO_LOCATIONS = [
-    { lat: 13.7013, lng: -89.2011 },
-    { lat: 13.6773, lng: -89.2358 },
-    { lat: 13.7942, lng: -88.8965 },
-    { lat: 13.4833, lng: -88.1833 },
-    { lat: 14.0333, lng: -89.5500 },
-    { lat: 13.3500, lng: -87.8500 },
-    { lat: 13.7167, lng: -89.7333 },
-  ];
-
-  // Merge device data with school info
-  const allSondas = dispositivos.map((d, i) => {
+  // Ubicación de cada sonda: 1) coords reales de la escuela por código MINED,
+  // 2) GPS reportado por la sonda. Sin coordenadas "demo": si no hay ninguna,
+  // lat/lng quedan null y la sonda no se pinta en el mapa (sí en la tabla).
+  const allSondas = dispositivos.map((d) => {
     const cleanId = (d.cpu_id || d.id).replace(/"/g, "").trim();
-    const escuela = escuelas[cleanId] ?? escuelas[d.id];
-    const demo = DEMO_LOCATIONS[i % DEMO_LOCATIONS.length];
-    const lat = escuela?.latitud_fija || d.latitud || demo.lat;
-    const lng = escuela?.longitud_fija || d.longitud || demo.lng;
+    const codigo = (d.codigo_mined || "").trim();
+    const esc = codigo ? coordsEsc[codigo] : undefined;
+    const gpsLat = Number(d.latitud);
+    const gpsLng = Number(d.longitud);
+    const gpsOk = Number.isFinite(gpsLat) && Number.isFinite(gpsLng) && gpsLat !== 0 && gpsLng !== 0;
+    const lat: number | null = esc?.lat ?? (gpsOk ? gpsLat : null);
+    const lng: number | null = esc?.lng ?? (gpsOk ? gpsLng : null);
     return {
-      serie: escuela?.nombre_escuela || cleanId,
+      serie: esc?.nombre || cleanId,
       cpuId: cleanId,
       lat,
       lng,
@@ -58,7 +52,7 @@ export default async function EscuelasPage({
       ups_status: d.ups_status ?? "—",
       ups_nivel: d.ups_nivel ?? 0,
       web_check_mined: d.web_check_mined ?? "—",
-      departamento: clasificarPorDepartamento(lat, lng),
+      departamento: lat != null && lng != null ? clasificarPorDepartamento(lat, lng) : null,
     };
   });
 
@@ -102,8 +96,10 @@ export default async function EscuelasPage({
     { activas: 0, inactivas: 0 },
   );
 
-  // Prepare map data for SchoolMapWrapper
-  const mapMarkers = sondas.map((s) => ({
+  // Prepare map data for SchoolMapWrapper — solo las que tienen coordenadas reales.
+  const mapMarkers = sondas
+    .filter((s): s is typeof s & { lat: number; lng: number } => s.lat != null && s.lng != null)
+    .map((s) => ({
     id: s.cpuId,
     nombre: s.serie,
     lat: s.lat,

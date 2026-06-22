@@ -149,6 +149,38 @@ export async function getEscuelas(): Promise<Record<string, Escuela>> {
   }
 }
 
+// Coordenadas REALES de cada escuela desde la tabla `escuelas`, indexadas por
+// código MINED. El mapa ubica cada sonda por su codigo_mined contra este mapa
+// (en vez de apilar las que no tienen GPS en coordenadas "demo").
+export async function getCoordsEscuelas(): Promise<
+  Record<string, { nombre: string; lat: number; lng: number }>
+> {
+  try {
+    const rows = await query<{
+      codigo_mined: string | null;
+      nombre_escuela: string | null;
+      lat: string | number | null;
+      lon: string | number | null;
+    }>(
+      `SELECT codigo_mined, nombre_escuela, lat, lon
+       FROM escuelas
+       WHERE codigo_mined IS NOT NULL AND lat IS NOT NULL AND lon IS NOT NULL`,
+    );
+    const map: Record<string, { nombre: string; lat: number; lng: number }> = {};
+    for (const r of rows) {
+      const codigo = String(r.codigo_mined ?? "").trim();
+      const lat = Number(r.lat);
+      const lng = Number(r.lon);
+      if (!codigo || !Number.isFinite(lat) || !Number.isFinite(lng) || lat === 0 || lng === 0) continue;
+      map[codigo] = { nombre: r.nombre_escuela || codigo, lat, lng };
+    }
+    return map;
+  } catch (err) {
+    console.error("getCoordsEscuelas failed:", err);
+    return {};
+  }
+}
+
 function rowToRegistro(r: MasterRow & { id: number | string }): RegistroHistorico {
   const ts = r.fecha_registro.getTime();
   const online = true; // historical rows always represent a successful report
