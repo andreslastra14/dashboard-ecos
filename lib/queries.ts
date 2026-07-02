@@ -230,6 +230,45 @@ export async function getRegistrosDispositivo(cpuId: string, limite = 100): Prom
   }
 }
 
+// Velocidad agregada por intervalos de tiempo (buckets), promediando en SQL.
+// Escala a miles de sondas: devuelve ~1 punto por bucket (p.ej. 144 en 12h a 5 min),
+// en vez de traer filas crudas que se truncan con el LIMIT. Sin sondaId agrega TODAS
+// las sondas (promedio de red); con sondaId, solo esa sonda.
+export async function getVelocidadBuckets(
+  horas = 12,
+  sondaId?: string,
+  bucketMin = 5,
+): Promise<{ ts: number; descarga: number; subida: number }[]> {
+  try {
+    const bucketSec = bucketMin * 60;
+    const cutoff = new Date(Date.now() - horas * 60 * 60 * 1000);
+    const params: unknown[] = [bucketSec, cutoff];
+    let sondaFilter = "";
+    if (sondaId) {
+      params.push(sondaId);
+      sondaFilter = "AND sonda_id = $3";
+    }
+    const rows = await query<{ bucket: Date; descarga: string | null; subida: string | null }>(
+      `SELECT to_timestamp(floor(extract(epoch from fecha_registro) / $1) * $1) AS bucket,
+              AVG(eth_download) FILTER (WHERE eth_download > 0) AS descarga,
+              AVG(wifi_download) FILTER (WHERE wifi_download > 0) AS subida
+       FROM registros_ecos_master
+       WHERE fecha_registro >= $2 ${sondaFilter}
+       GROUP BY 1
+       ORDER BY 1`,
+      params,
+    );
+    return rows.map((r) => ({
+      ts: (r.bucket instanceof Date ? r.bucket : new Date(r.bucket as unknown as string)).getTime(),
+      descarga: Number(r.descarga ?? 0),
+      subida: Number(r.subida ?? 0),
+    }));
+  } catch (err) {
+    console.error("getVelocidadBuckets failed:", err);
+    return [];
+  }
+}
+
 export async function getRegistrosRecientes(limite = 3000, horas = 12): Promise<RegistroHistorico[]> {
   try {
     const cutoff = new Date(Date.now() - horas * 60 * 60 * 1000);

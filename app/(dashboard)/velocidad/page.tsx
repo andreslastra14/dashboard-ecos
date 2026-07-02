@@ -1,4 +1,4 @@
-import { getDispositivos, getEscuelas, getRegistrosRecientes } from "@/lib/queries";
+import { getDispositivos, getEscuelas, getRegistrosRecientes, getVelocidadBuckets } from "@/lib/queries";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SpeedChartCard, type SpeedPoint } from "@/components/SpeedChartCard";
 
@@ -11,10 +11,12 @@ interface PageProps {
 export default async function VelocidadPage({ searchParams }: PageProps) {
   const { sonda: sondaParam } = await searchParams;
 
-  const [dispositivos, escuelas, registros] = await Promise.all([
+  const [dispositivos, escuelas, registros, speedBuckets] = await Promise.all([
     getDispositivos(),
     getEscuelas(),
     getRegistrosRecientes(3000, 12),
+    // Datos del chart agregados en SQL (no se truncan con el LIMIT como las filas crudas).
+    getVelocidadBuckets(12, sondaParam),
   ]);
 
   // Build device list
@@ -40,20 +42,9 @@ export default async function VelocidadPage({ searchParams }: PageProps) {
     ? registros.filter((r) => r.cpu_id === sondaParam)
     : registros;
 
-  const speedData: SpeedPoint[] = [...filteredRegistros]
-    .reverse()
-    .map((r) => {
-      let tsNum = 0;
-      if (r.timestamp && typeof r.timestamp === "object" && "toDate" in r.timestamp) {
-        tsNum = (r.timestamp as { toDate: () => Date }).toDate().getTime();
-      }
-      return {
-        ts: tsNum,
-        descarga: r.eth_download_mbps || r.download_mbps,
-        subida: r.wifi_download_mbps,
-      };
-    })
-    .filter((p) => p.ts > 0);
+  // El chart usa los buckets agregados en SQL (completos para todo el rango,
+  // aunque haya miles de sondas). descarga = Ethernet, subida = WiFi.
+  const speedData: SpeedPoint[] = speedBuckets.filter((p) => p.ts > 0);
 
   const conVelocidad = filteredRegistros.filter((r) => r.download_mbps > 0);
   const downs = conVelocidad.map((r) => r.download_mbps);
