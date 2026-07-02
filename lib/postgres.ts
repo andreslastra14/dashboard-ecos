@@ -61,11 +61,13 @@ async function createPool(): Promise<Pool> {
       // 3 en paralelo (el otro espera ~500ms). Con N lambdas concurrentes
       // el total de conexiones sigue acotado (N × 3, típicamente 10-15
       // bajo carga normal de monitoreo).
-      max: 3,
+      // max más alto: cada página lanza 2-4 queries en paralelo; con max=3 una sola
+      // carga agotaba el pool y las demás vencían por timeout ("no se ve nada").
+      max: 8,
       idleTimeoutMillis: 30_000,
-      // 8s: si la BD no responde, fallar rápido para que las páginas degraden
-      // (los try/catch devuelven []/null) en vez de colgarse y dar sensación de caída.
-      connectionTimeoutMillis: 8_000,
+      // 20s: mientras no exista el índice (sonda_id, fecha_registro), las queries
+      // son lentas; dar tiempo a adquirir conexión para que se muestren los datos.
+      connectionTimeoutMillis: 20_000,
     });
   }
 
@@ -83,9 +85,9 @@ async function createPool(): Promise<Pool> {
     user: process.env.DB_USER,
     password: process.env.DB_PASS,
     ssl: { rejectUnauthorized: false },
-    max: 3,
+    max: 8,
     idleTimeoutMillis: 30_000,
-    connectionTimeoutMillis: 8_000,
+    connectionTimeoutMillis: 20_000,
   });
 }
 
