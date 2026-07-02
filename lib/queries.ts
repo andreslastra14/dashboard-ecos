@@ -96,8 +96,84 @@ async function getLatestWebChecks(): Promise<Map<string, Record<string, string>>
   return map;
 }
 
-// Latest state per sonda from registros_ecos_master
+// Columnas reales de la tabla `escuelas` (cacheado en memoria del módulo).
+let escuelasColsCache: Set<string> | null = null;
+async function getEscuelasCols(): Promise<Set<string>> {
+  if (escuelasColsCache) return escuelasColsCache;
+  try {
+    const rows = await query<{ column_name: string }>(
+      `SELECT column_name FROM information_schema.columns WHERE table_name = 'escuelas'`,
+    );
+    escuelasColsCache = new Set(rows.map((r) => r.column_name.toLowerCase()));
+  } catch {
+    escuelasColsCache = new Set();
+  }
+  return escuelasColsCache;
+}
+
+// Mapea una fila de la tabla `escuelas` (estado YA calculado) a Dispositivo.
+function escuelaRowToDispositivo(r: Record<string, unknown>): Dispositivo {
+  const sonda = String(r.sonda_id ?? r.codigo_mined ?? "");
+  const online = String(r.estado_red ?? "").toUpperCase() === "OK";
+  const vel = Number(r.velocidad_promedio ?? 0) || 0;
+  const upsConectada = r.ups_conectada === true;
+  const ts = Date.now();
+  const ultimo_reporte = {
+    toDate: () => new Date(ts),
+    seconds: Math.floor(ts / 1000),
+    nanoseconds: 0,
+  } as import("./firebase").DbTimestamp;
+  return {
+    id: sonda,
+    cpu_id: sonda,
+    codigo_mined: String(r.codigo_mined ?? ""),
+    id_hardware: sonda,
+    version_sonda: "ecos",
+    online,
+    ultimo_reporte,
+    download_mbps: vel,
+    eth_download_mbps: vel,
+    wifi_download_mbps: 0,
+    latitud: Number(r.lat ?? 0),
+    longitud: Number(r.lon ?? 0),
+    gps_status: "N/A",
+    cpu_usage: 0,
+    ram_usage: 0,
+    disk_usage: 0,
+    temp_cpu: "N/A",
+    eth_latencia_ms: 0,
+    wifi_latencia_ms: 0,
+    web_check_mined: online ? "ACCESIBLE" : "SIN_CONEXION",
+    web_check_streaming: online ? "ACCESIBLE" : "SIN_CONEXION",
+    web_check_adultos: online ? "BLOQUEADO" : "SIN_CONEXION",
+    web_check_apuestas: online ? "BLOQUEADO" : "SIN_CONEXION",
+    ups_status: upsConectada ? "CON_LUZ" : "NORMAL",
+    ups_nivel: 0,
+    ups_conectada: upsConectada,
+    ups_modo: "LINEA",
+    link_rpi_connect: "",
+    alerta_enviada: false,
+    ticket_activo: !online,
+  };
+}
+
+// Estado por sonda. Camino RÁPIDO: tabla `escuelas` (estado materializado, O(#escuelas)).
+// Si no tiene las columnas necesarias o falla, cae a la telemetría cruda (más lento).
 export async function getDispositivos(): Promise<Dispositivo[]> {
+  try {
+    const cols = await getEscuelasCols();
+    if (cols.has("sonda_id") && cols.has("estado_red")) {
+      const want = ["sonda_id", "estado_red", "nombre_escuela", "codigo_mined", "velocidad_promedio", "ups_conectada", "lat", "lon"];
+      const sel = want.filter((c) => cols.has(c));
+      const rows = await query<Record<string, unknown>>(
+        `SELECT ${sel.map((c) => `"${c}"`).join(", ")} FROM escuelas WHERE sonda_id IS NOT NULL`,
+      );
+      if (rows.length) return rows.map(escuelaRowToDispositivo);
+    }
+  } catch (err) {
+    console.error("getDispositivos (escuelas) failed, fallback a master:", err);
+  }
+  // Fallback: telemetría cruda de registros_ecos_master (DISTINCT ON, más lento).
   try {
     const rows = await query<MasterRow>(
       `SELECT DISTINCT ON (sonda_id) ${MASTER_COLS}
@@ -113,10 +189,50 @@ export async function getDispositivos(): Promise<Dispositivo[]> {
   }
 }
 
-// Synthesize "escuelas" from sondas so the dashboard map works.
-// The real `escuelas` table has no coordinates; sondas do, so we build
-// a virtual inventory keyed by sonda_id using their latest report.
+// Inventario de escuelas (nombre + coords). Camino RÁPIDO: tabla `escuelas` real.
+// Fallback: sintetizar desde registros_ecos_master (más lento) si la tabla no sirve.
 export async function getEscuelas(): Promise<Record<string, Escuela>> {
+  const buildEscuela = (sonda: string, nombre: string, lat: number, lng: number, cod: string): Escuela => ({
+    id: sonda,
+    nombre_escuela: nombre,
+    contacto_principal: "", tel_principal: "", email_principal: "",
+    contacto_secundario: "", tel_secundario: "", email_secundario: "",
+    direccion: "",
+    latitud_fija: lat,
+    longitud_fija: lng,
+    conectividad: "Dual-link",
+    cod_ce: cod,
+  });
+
+  try {
+    const cols = await getEscuelasCols();
+    if (cols.has("sonda_id")) {
+      const want = ["sonda_id", "nombre_escuela", "codigo_mined", "lat", "lon"];
+      const sel = want.filter((c) => cols.has(c));
+      const rows = await query<Record<string, unknown>>(
+        `SELECT ${sel.map((c) => `"${c}"`).join(", ")} FROM escuelas WHERE sonda_id IS NOT NULL`,
+      );
+      if (rows.length) {
+        const map: Record<string, Escuela> = {};
+        for (const r of rows) {
+          const sonda = String(r.sonda_id ?? "");
+          if (!sonda) continue;
+          map[sonda] = buildEscuela(
+            sonda,
+            String(r.nombre_escuela ?? sonda),
+            Number(r.lat ?? 0),
+            Number(r.lon ?? 0),
+            String(r.codigo_mined ?? sonda),
+          );
+        }
+        return map;
+      }
+    }
+  } catch (err) {
+    console.error("getEscuelas (tabla) failed, fallback:", err);
+  }
+
+  // Fallback: sintetizar desde la telemetría (comportamiento anterior).
   try {
     const rows = await query<{ sonda_id: string; latitud: number | null; longitud: number | null }>(
       `SELECT DISTINCT ON (sonda_id) sonda_id, latitud, longitud
@@ -126,21 +242,13 @@ export async function getEscuelas(): Promise<Record<string, Escuela>> {
     );
     const map: Record<string, Escuela> = {};
     for (const r of rows) {
-      map[r.sonda_id] = {
-        id: r.sonda_id,
-        nombre_escuela: r.sonda_id.replace(/_/g, " "),
-        contacto_principal: "",
-        tel_principal: "",
-        email_principal: "",
-        contacto_secundario: "",
-        tel_secundario: "",
-        email_secundario: "",
-        direccion: "",
-        latitud_fija: Number(r.latitud ?? 0),
-        longitud_fija: Number(r.longitud ?? 0),
-        conectividad: "Dual-link",
-        cod_ce: r.sonda_id,
-      };
+      map[r.sonda_id] = buildEscuela(
+        r.sonda_id,
+        r.sonda_id.replace(/_/g, " "),
+        Number(r.latitud ?? 0),
+        Number(r.longitud ?? 0),
+        r.sonda_id,
+      );
     }
     return map;
   } catch (err) {
