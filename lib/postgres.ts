@@ -61,13 +61,13 @@ async function createPool(): Promise<Pool> {
       // 3 en paralelo (el otro espera ~500ms). Con N lambdas concurrentes
       // el total de conexiones sigue acotado (N × 3, típicamente 10-15
       // bajo carga normal de monitoreo).
-      // max más alto: cada página lanza 2-4 queries en paralelo; con max=3 una sola
-      // carga agotaba el pool y las demás vencían por timeout ("no se ve nada").
-      max: 8,
+      // Pool acotado: max alto saturaba Cloud SQL con queries lentas concurrentes.
+      max: 4,
       idleTimeoutMillis: 30_000,
-      // 20s: mientras no exista el índice (sonda_id, fecha_registro), las queries
-      // son lentas; dar tiempo a adquirir conexión para que se muestren los datos.
-      connectionTimeoutMillis: 20_000,
+      connectionTimeoutMillis: 10_000,
+      // CLAVE: corta cualquier query que se cuelgue a los 15s. Sin esto, una query
+      // lenta corría hasta el límite de la función (300s) -> 504 y home caída.
+      statement_timeout: 15_000,
     });
   }
 
@@ -85,9 +85,10 @@ async function createPool(): Promise<Pool> {
     user: process.env.DB_USER,
     password: process.env.DB_PASS,
     ssl: { rejectUnauthorized: false },
-    max: 8,
+    max: 4,
     idleTimeoutMillis: 30_000,
-    connectionTimeoutMillis: 20_000,
+    connectionTimeoutMillis: 10_000,
+    statement_timeout: 15_000,
   });
 }
 
