@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { SchoolMapWrapper } from "@/components/SchoolMapWrapper";
 import { ZoneFilter } from "@/components/ZoneFilter";
 import { clasificarPorDepartamento, getDepartamento, DEPARTAMENTOS } from "@/lib/geo";
+import { cleanDeviceId, filterTitle, splitParam, zonaFromDepartamento, type DashboardFilterParams } from "@/lib/dashboard-filters";
 import { Suspense } from "react";
 
 export const revalidate = 30;
@@ -11,26 +12,19 @@ export const revalidate = 30;
 export default async function EscuelasPage({
   searchParams,
 }: {
-  searchParams: Promise<{ zona?: string; sonda?: string }>;
+  searchParams: Promise<DashboardFilterParams>;
 }) {
-  const { zona, sonda: sondaParam } = await searchParams;
+  const filters = await searchParams;
   const [allDispositivos, coordsEsc] = await Promise.all([
     getDispositivos(),
     getCoordsEscuelas(),
   ]);
 
-  const dispositivos = sondaParam
-    ? allDispositivos.filter((d) => {
-        const cleanId = (d.cpu_id || d.id).replace(/"/g, "").trim();
-        return cleanId === sondaParam || d.cpu_id === sondaParam;
-      })
-    : allDispositivos;
-
   // Ubicación de cada sonda: 1) coords reales de la escuela por código MINED,
   // 2) GPS reportado por la sonda. Sin coordenadas "demo": si no hay ninguna,
   // lat/lng quedan null y la sonda no se pinta en el mapa (sí en la tabla).
-  const allSondas = dispositivos.map((d) => {
-    const cleanId = (d.cpu_id || d.id).replace(/"/g, "").trim();
+  const allSondas = allDispositivos.map((d) => {
+    const cleanId = cleanDeviceId(d);
     const codigo = (d.codigo_mined || "").trim();
     const esc = codigo ? coordsEsc[codigo] : undefined;
     const gpsLat = Number(d.latitud);
@@ -74,13 +68,23 @@ export default async function EscuelasPage({
       ...statsMap.get(d.nombre)!,
     }));
 
-  // Filter if zona is set
-  const sondas = zona
-    ? allSondas.filter((s) => s.departamento === zona)
-    : allSondas;
+  const selectedIds = new Set([...splitParam(filters.sonda), ...splitParam(filters.sondas)]);
+  const departamentos = splitParam(filters.departamento);
+  const zonas = splitParam(filters.zona);
+  const estados = splitParam(filters.estado);
+  const sondas = allSondas.filter((s) => {
+    if (selectedIds.size && !selectedIds.has(s.cpuId)) return false;
+    if (departamentos.length && (!s.departamento || !departamentos.includes(s.departamento))) return false;
+    if (zonas.length && !zonas.includes(zonaFromDepartamento(s.departamento))) return false;
+    if (estados.length) {
+      const estado = s.online ? "online" : "offline";
+      if (!estados.includes(estado)) return false;
+    }
+    return true;
+  });
 
   // Map center/zoom
-  const dept = zona ? getDepartamento(zona) : undefined;
+  const dept = departamentos.length === 1 ? getDepartamento(departamentos[0]) : undefined;
   const mapCenter: [number, number] | undefined = dept
     ? [dept.center.lat, dept.center.lng]
     : undefined;
@@ -140,12 +144,12 @@ export default async function EscuelasPage({
             <ZoneFilter stats={zoneStats} />
           </Suspense>
         </div>
-        {zona && (
+        {(selectedIds.size > 0 || departamentos.length > 0 || zonas.length > 0 || estados.length > 0) && (
           <span
             className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium text-white"
             style={{ backgroundColor: "#1e3a5f" }}
           >
-            Mostrando: {zona} ({sondas.length} dispositivos)
+            Mostrando: {filterTitle(filters) || "selección"} ({sondas.length} dispositivos)
           </span>
         )}
       </div>
@@ -204,7 +208,7 @@ export default async function EscuelasPage({
                 ))}
                 {sondas.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center text-gray-400">Sin datos disponibles</td>
+                    <td colSpan={7} className="px-4 py-8 text-center text-gray-400">Sin datos disponibles</td>
                   </tr>
                 )}
               </tbody>

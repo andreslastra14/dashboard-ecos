@@ -6,8 +6,15 @@ import {
   calcularUptimePorDispositivo,
   calcularCalidadRed,
 } from "@/lib/queries";
+import {
+  filterDispositivos,
+  filterRegistrosByDevices,
+  hasDashboardFilters,
+  selectedDeviceIdSet,
+  type DashboardFilterParams,
+} from "@/lib/dashboard-filters";
 import { getCasoStats } from "@/lib/tickets";
-import type { Dispositivo, Escuela } from "@/lib/firebase";
+import type { Escuela } from "@/lib/firebase";
 import type { MapMarker } from "@/components/SchoolMap";
 import type { InsightsData } from "@/components/InsightsPanel";
 import type { UptimeData } from "@/components/UptimeChart";
@@ -45,32 +52,30 @@ function parseTemp(temp: string): number {
 }
 
 interface PageProps {
-  searchParams: Promise<{ sonda?: string }>;
+  searchParams: Promise<DashboardFilterParams>;
 }
 
 export default async function Home({ searchParams }: PageProps) {
-  const { sonda: sondaParam } = await searchParams;
-  const [dispositivos, escuelas, registros, casoStats, speedBuckets] = await Promise.all([
+  const filters = await searchParams;
+  const [dispositivos, escuelas, registros, casoStats] = await Promise.all([
     getDispositivos(),
     getEscuelas(),
     getRegistrosRecientes(3000, 12),
     getCasoStats(),
-    // Serie de velocidad de las últimas 12h agregada en SQL a buckets de 5 min (~145 puntos).
-    // Reemplaza el cálculo desde `registros` que, al topar en 3000 filas (~5.600/hora),
-    // solo cubría ~30 min. Los buckets cubren las 12h completas y corren en ~140ms.
-    getVelocidadBuckets(12, sondaParam),
   ]);
 
-  const filteredDispositivos = sondaParam
-    ? dispositivos.filter((d) => {
-        const cleanId = (d.cpu_id || d.id).replace(/"/g, "").trim();
-        return cleanId === sondaParam || d.cpu_id === sondaParam;
-      })
-    : dispositivos;
-
-  const filteredRegistros = sondaParam
-    ? registros.filter((r) => r.cpu_id === sondaParam)
-    : registros;
+  const activeFilters = hasDashboardFilters(filters);
+  const filteredDispositivos = filterDispositivos(dispositivos, escuelas, filters);
+  const filteredIds = selectedDeviceIdSet(filteredDispositivos);
+  const filteredRegistros = filterRegistrosByDevices(registros, filteredIds, activeFilters);
+  // Serie de velocidad de las últimas 12h agregada en SQL a buckets de 5 min (~145 puntos).
+  // Cuando hay filtros, se agrega solo sobre los dispositivos filtrados.
+  const speedBuckets = await getVelocidadBuckets(
+    12,
+    filters.sonda,
+    5,
+    activeFilters ? Array.from(filteredIds) : undefined,
+  );
 
   // ── KPI calculations ─────────────────────────────────────
   const totalDispositivos = filteredDispositivos.length;

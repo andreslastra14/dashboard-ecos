@@ -180,7 +180,7 @@ export async function getDispositivos(): Promise<Dispositivo[]> {
 // Inventario de escuelas (nombre + coords). Camino RÁPIDO: tabla `escuelas` real.
 // Fallback: sintetizar desde registros_ecos_master (más lento) si la tabla no sirve.
 export async function getEscuelas(): Promise<Record<string, Escuela>> {
-  const buildEscuela = (sonda: string, nombre: string, lat: number, lng: number, cod: string): Escuela => ({
+  const buildEscuela = (sonda: string, nombre: string, lat: number, lng: number, cod: string, departamento?: string): Escuela => ({
     id: sonda,
     nombre_escuela: nombre,
     contacto_principal: "", tel_principal: "", email_principal: "",
@@ -188,6 +188,7 @@ export async function getEscuelas(): Promise<Record<string, Escuela>> {
     direccion: "",
     latitud_fija: lat,
     longitud_fija: lng,
+    departamento,
     conectividad: "Dual-link",
     cod_ce: cod,
   });
@@ -195,7 +196,7 @@ export async function getEscuelas(): Promise<Record<string, Escuela>> {
   try {
     const cols = await getEscuelasCols();
     if (cols.has("sonda_id")) {
-      const want = ["sonda_id", "nombre_escuela", "codigo_mined", "lat", "lon"];
+      const want = ["sonda_id", "nombre_escuela", "codigo_mined", "departamento", "lat", "lon"];
       const sel = want.filter((c) => cols.has(c));
       const rows = await query<Record<string, unknown>>(
         `SELECT ${sel.map((c) => `"${c}"`).join(", ")} FROM escuelas WHERE sonda_id IS NOT NULL`,
@@ -211,6 +212,7 @@ export async function getEscuelas(): Promise<Record<string, Escuela>> {
             Number(r.lat ?? 0),
             Number(r.lon ?? 0),
             String(r.codigo_mined ?? sonda),
+            String(r.departamento ?? "") || undefined,
           );
         }
         return map;
@@ -335,6 +337,7 @@ export async function getVelocidadBuckets(
   horas = 12,
   sondaId?: string,
   bucketMin = 5,
+  sondaIds?: string[],
 ): Promise<{ ts: number; descarga: number; subida: number }[]> {
   try {
     const bucketSec = bucketMin * 60;
@@ -343,9 +346,14 @@ export async function getVelocidadBuckets(
     // capturaba mal el rango (solo salía un tramo). Usar MAX evita ese desfase de zona horaria.
     const params: unknown[] = [bucketSec, horas];
     let sondaFilter = "";
-    if (sondaId) {
+    const ids = sondaIds?.filter(Boolean);
+    if (sondaIds && !ids?.length) return [];
+    if (ids?.length) {
+      params.push(ids);
+      sondaFilter = `AND sonda_id = ANY($${params.length}::text[])`;
+    } else if (sondaId) {
       params.push(sondaId);
-      sondaFilter = "AND sonda_id = $3";
+      sondaFilter = `AND sonda_id = $${params.length}`;
     }
     const rows = await query<{ bucket: Date; descarga: string | null; subida: string | null }>(
       `SELECT to_timestamp(floor(extract(epoch from fecha_registro) / $1) * $1) AS bucket,

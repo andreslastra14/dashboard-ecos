@@ -1,0 +1,1079 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ECOS - POC buscador avanzado de sondas</title>
+  <style>
+    :root {
+      --navy: #0a1628;
+      --navy-2: #10243c;
+      --blue: #1e3a5f;
+      --blue-2: #2e6da4;
+      --green: #188455;
+      --red: #c73636;
+      --amber: #c87913;
+      --ink: #172033;
+      --muted: #687589;
+      --line: #d8e1ee;
+      --soft: #f5f7fb;
+      --card: #ffffff;
+      --shadow: 0 20px 60px rgba(10, 22, 40, 0.18);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: #eef3f8;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      letter-spacing: 0;
+    }
+
+    button, input { font: inherit; }
+    button { border: 0; cursor: pointer; }
+
+    .app {
+      min-height: 100%;
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    .topbar {
+      height: 64px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 0 24px;
+      background: var(--navy);
+      color: white;
+      border-bottom: 1px solid rgba(255,255,255,0.09);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 210px;
+    }
+
+    .mark {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      background: #12345a;
+      color: #8fd2ff;
+      font-weight: 800;
+      letter-spacing: 0;
+    }
+
+    .brand strong {
+      display: block;
+      font-size: 13px;
+      line-height: 1.1;
+      text-transform: uppercase;
+      letter-spacing: 0;
+    }
+
+    .brand span {
+      display: block;
+      margin-top: 2px;
+      font-size: 11px;
+      color: #86a6c8;
+      white-space: nowrap;
+    }
+
+    .spotlight-trigger {
+      flex: 1;
+      max-width: 860px;
+      min-width: 160px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 12px;
+      border: 1px solid #264663;
+      border-radius: 8px;
+      background: #0f1f35;
+      color: #c7d4e4;
+      text-align: left;
+      transition: border-color 160ms ease, background 160ms ease, box-shadow 160ms ease;
+    }
+
+    .spotlight-trigger:hover {
+      background: #122941;
+      border-color: #3c6f9f;
+      box-shadow: 0 0 0 3px rgba(46, 109, 164, 0.18);
+    }
+
+    .search-icon {
+      width: 16px;
+      height: 16px;
+      border: 2px solid currentColor;
+      border-radius: 50%;
+      position: relative;
+      flex: 0 0 auto;
+      opacity: .78;
+    }
+
+    .search-icon:after {
+      content: "";
+      position: absolute;
+      width: 7px;
+      height: 2px;
+      right: -6px;
+      bottom: -3px;
+      background: currentColor;
+      transform: rotate(45deg);
+      border-radius: 2px;
+    }
+
+    .trigger-copy {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+      flex: 1;
+      color: #9eb4ca;
+      font-size: 13px;
+    }
+
+    .trigger-copy strong {
+      min-width: 0;
+      color: #e5eef7;
+      font-weight: 600;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .kbd {
+      padding: 2px 7px;
+      border: 1px solid #33506d;
+      border-radius: 5px;
+      color: #89a9c8;
+      background: rgba(255,255,255,0.04);
+      font-size: 11px;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 7px 10px;
+      border-radius: 999px;
+      background: #10243c;
+      color: #cbd9e8;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--green);
+    }
+
+    .main {
+      display: grid;
+      grid-template-columns: 230px 1fr;
+      min-height: 0;
+    }
+
+    .rail {
+      background: var(--navy);
+      padding: 18px 12px;
+      border-right: 1px solid #1c3552;
+    }
+
+    .nav-item {
+      height: 40px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 12px;
+      margin-bottom: 5px;
+      border-radius: 8px;
+      color: #9fb3c9;
+      font-size: 14px;
+    }
+
+    .nav-item.active {
+      color: #b9dcff;
+      background: var(--blue);
+    }
+
+    .content {
+      min-width: 0;
+      padding: 22px;
+      overflow: auto;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: white;
+      box-shadow: 0 8px 24px rgba(10, 22, 40, 0.04);
+    }
+
+    .kpi {
+      min-height: 96px;
+      padding: 16px;
+    }
+
+    .kpi span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+
+    .kpi strong {
+      display: block;
+      margin-top: 12px;
+      font-size: 30px;
+      line-height: 1;
+    }
+
+    .workarea {
+      display: grid;
+      grid-template-columns: minmax(0, 1.4fr) minmax(340px, .6fr);
+      gap: 16px;
+    }
+
+    .map-fake {
+      min-height: 420px;
+      position: relative;
+      overflow: hidden;
+      background:
+        linear-gradient(110deg, transparent 0 35%, rgba(46,109,164,.06) 35% 37%, transparent 37% 100%),
+        radial-gradient(circle at 34% 40%, rgba(46,109,164,.14), transparent 34%),
+        radial-gradient(circle at 62% 58%, rgba(24,132,85,.16), transparent 24%),
+        #f8fbfe;
+    }
+
+    .map-fake:before {
+      content: "";
+      position: absolute;
+      inset: 22px;
+      border: 1px dashed #c7d5e4;
+      border-radius: 16px;
+    }
+
+    .pin {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 0 5px rgba(24,132,85,.12);
+    }
+
+    .pin.offline {
+      background: var(--red);
+      box-shadow: 0 0 0 5px rgba(199,54,54,.12);
+    }
+
+    .panel {
+      padding: 16px;
+    }
+
+    .panel h2 {
+      margin: 0 0 12px;
+      font-size: 13px;
+      text-transform: uppercase;
+      color: #58677a;
+      letter-spacing: .04em;
+    }
+
+    .selected-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .mini-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px;
+      border: 1px solid #e7edf5;
+      border-radius: 8px;
+      background: #fbfdff;
+      font-size: 13px;
+    }
+
+    .mini-row small {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 78px 18px 24px;
+      background: rgba(10, 22, 40, .42);
+      backdrop-filter: blur(7px);
+      z-index: 20;
+    }
+
+    .overlay.open { display: flex; }
+
+    .spotlight {
+      width: min(1080px, 100%);
+      max-height: min(780px, calc(100vh - 104px));
+      display: grid;
+      grid-template-rows: auto auto 1fr auto;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,.36);
+      border-radius: 14px;
+      background: rgba(255,255,255,.96);
+      box-shadow: var(--shadow);
+    }
+
+    .search-row {
+      height: 70px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 0 18px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .search-row input {
+      width: 100%;
+      border: 0;
+      outline: 0;
+      background: transparent;
+      color: var(--ink);
+      font-size: 22px;
+      font-weight: 600;
+      letter-spacing: 0;
+    }
+
+    .search-row input::placeholder { color: #a0acbc; }
+
+    .close-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      background: #eef3f8;
+      color: #607086;
+      font-size: 18px;
+      flex: 0 0 auto;
+    }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 16px;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--line);
+      background: #f7f9fc;
+    }
+
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      min-height: 30px;
+      padding: 0 10px;
+      border: 1px solid #d5deeb;
+      border-radius: 999px;
+      background: white;
+      color: #46566b;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+      transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
+    }
+
+    .chip.active {
+      border-color: #9fc3e3;
+      background: #e9f4ff;
+      color: #1e4e7a;
+    }
+
+    .chip .mini-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: #9aa8b9;
+    }
+
+    .chip.green .mini-dot { background: var(--green); }
+    .chip.red .mini-dot { background: var(--red); }
+    .chip.amber .mini-dot { background: var(--amber); }
+
+    .meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .results-wrap {
+      display: grid;
+      grid-template-columns: 280px minmax(0, 1fr);
+      min-height: 0;
+    }
+
+    .facets {
+      min-height: 0;
+      padding: 14px;
+      border-right: 1px solid var(--line);
+      background: #fbfdff;
+      overflow: auto;
+    }
+
+    .facet-group {
+      margin-bottom: 18px;
+    }
+
+    .facet-title {
+      margin: 0 0 8px;
+      color: #718197;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+    }
+
+    .facet-list {
+      display: grid;
+      gap: 6px;
+    }
+
+    .facet {
+      width: 100%;
+      min-height: 34px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 0 10px;
+      border-radius: 8px;
+      background: transparent;
+      color: #38475c;
+      text-align: left;
+      font-size: 13px;
+    }
+
+    .facet:hover { background: #edf4fb; }
+    .facet.active {
+      color: #153e63;
+      background: #dfefff;
+    }
+
+    .count {
+      min-width: 24px;
+      padding: 3px 7px;
+      border-radius: 999px;
+      background: #edf1f6;
+      color: #66768b;
+      font-size: 11px;
+      text-align: center;
+    }
+
+    .facet.active .count {
+      background: #bcdcf8;
+      color: #173c5f;
+    }
+
+    .results {
+      min-height: 0;
+      overflow: auto;
+      padding: 12px;
+      background: white;
+    }
+
+    .result {
+      width: 100%;
+      display: grid;
+      grid-template-columns: 24px minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+      min-height: 72px;
+      padding: 11px 12px;
+      border: 1px solid transparent;
+      border-radius: 10px;
+      background: white;
+      text-align: left;
+    }
+
+    .result:hover {
+      border-color: #dbe7f3;
+      background: #f8fbff;
+    }
+
+    .result.selected {
+      border-color: #9fc3e3;
+      background: #edf7ff;
+    }
+
+    .checkbox {
+      width: 18px;
+      height: 18px;
+      display: grid;
+      place-items: center;
+      border: 1px solid #b6c4d5;
+      border-radius: 5px;
+      color: white;
+      background: white;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .result.selected .checkbox {
+      background: var(--blue-2);
+      border-color: var(--blue-2);
+    }
+
+    .result-main {
+      min-width: 0;
+    }
+
+    .result-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+      margin-bottom: 4px;
+    }
+
+    .result-title strong {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 14px;
+    }
+
+    .state {
+      flex: 0 0 auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: #e7f6ef;
+      color: #126941;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .state.offline {
+      background: #fdecec;
+      color: #ad2a2a;
+    }
+
+    .result-sub {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      color: #66768b;
+      font-size: 12px;
+    }
+
+    .result-sub code {
+      color: #40516a;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 11px;
+      background: #f0f4f8;
+      padding: 2px 5px;
+      border-radius: 5px;
+    }
+
+    .score {
+      min-width: 130px;
+      display: grid;
+      gap: 5px;
+      justify-items: end;
+      color: #607086;
+      font-size: 12px;
+    }
+
+    .bar {
+      width: 110px;
+      height: 7px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: #edf1f6;
+    }
+
+    .bar > span {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--blue-2), var(--green));
+    }
+
+    .empty {
+      padding: 42px 16px;
+      color: #6c7a8d;
+      text-align: center;
+      font-size: 14px;
+    }
+
+    .footer {
+      min-height: 62px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 12px 16px;
+      border-top: 1px solid var(--line);
+      background: #f7f9fc;
+    }
+
+    .selected-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      min-width: 0;
+    }
+
+    .selected-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      max-width: 210px;
+      min-height: 30px;
+      padding: 0 9px;
+      border-radius: 999px;
+      background: #e7eef7;
+      color: #33455c;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .selected-chip span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .x {
+      width: 18px;
+      height: 18px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: rgba(10,22,40,.08);
+      color: #53647a;
+      line-height: 1;
+    }
+
+    .actions {
+      display: flex;
+      gap: 9px;
+      flex: 0 0 auto;
+    }
+
+    .btn {
+      height: 36px;
+      padding: 0 14px;
+      border-radius: 8px;
+      background: #e9eef5;
+      color: #40516a;
+      font-weight: 800;
+      font-size: 13px;
+    }
+
+    .btn.primary {
+      background: var(--blue);
+      color: white;
+    }
+
+    @media (max-width: 900px) {
+      .topbar { padding: 0 12px; }
+      .brand { min-width: auto; }
+      .brand span { display: none; }
+      .status-pill, .kbd { display: none; }
+      .main { grid-template-columns: 1fr; }
+      .rail { display: none; }
+      .hero { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .workarea { grid-template-columns: 1fr; }
+      .results-wrap { grid-template-columns: 1fr; }
+      .facets {
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+        max-height: 230px;
+      }
+      .result { grid-template-columns: 24px minmax(0, 1fr); }
+      .score { display: none; }
+      .footer { align-items: stretch; flex-direction: column; }
+      .actions { justify-content: flex-end; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="mark">E</div>
+        <div>
+          <strong>ECOS</strong>
+          <span>Monitoreo de red escolar</span>
+        </div>
+      </div>
+
+      <button class="spotlight-trigger" id="openSearch" type="button">
+        <span class="search-icon"></span>
+        <span class="trigger-copy">
+          <strong id="triggerLabel">Buscar sondas, escuelas, códigos, departamentos...</strong>
+        </span>
+        <span class="kbd">⌘ K</span>
+      </button>
+
+      <div class="status-pill">
+        <span class="dot"></span>
+        <span id="topSummary">0 seleccionadas</span>
+      </div>
+    </header>
+
+    <div class="main">
+      <aside class="rail">
+        <div class="nav-item active">Vista Global</div>
+        <div class="nav-item">Mapa</div>
+        <div class="nav-item">Velocidad</div>
+        <div class="nav-item">Alertas</div>
+        <div class="nav-item">Admin</div>
+      </aside>
+
+      <main class="content">
+        <section class="hero">
+          <div class="card kpi"><span>Resultado actual</span><strong id="kpiTotal">0</strong></div>
+          <div class="card kpi"><span>Online</span><strong id="kpiOnline">0</strong></div>
+          <div class="card kpi"><span>Departamentos</span><strong id="kpiDeptos">0</strong></div>
+          <div class="card kpi"><span>Selección</span><strong id="kpiSelected">0</strong></div>
+        </section>
+
+        <section class="workarea">
+          <div class="card map-fake" id="mapPins"></div>
+          <aside class="card panel">
+            <h2>Selección aplicada</h2>
+            <div class="selected-list" id="selectedPreview"></div>
+          </aside>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-label="Buscar sondas">
+    <section class="spotlight">
+      <div class="search-row">
+        <span class="search-icon"></span>
+        <input id="query" type="search" autocomplete="off" placeholder="Nombre, CE, serial, departamento, zona, municipio..." />
+        <button class="close-btn" id="closeSearch" type="button" aria-label="Cerrar">×</button>
+      </div>
+
+      <div class="toolbar">
+        <div class="filters" id="quickFilters"></div>
+        <div class="meta"><span id="resultMeta">0 resultados</span></div>
+      </div>
+
+      <div class="results-wrap">
+        <aside class="facets" id="facets"></aside>
+        <section class="results" id="results"></section>
+      </div>
+
+      <footer class="footer">
+        <div class="selected-chips" id="selectedChips"></div>
+        <div class="actions">
+          <button class="btn" id="clearAll" type="button">Limpiar</button>
+          <button class="btn primary" id="applySelection" type="button">Aplicar selección</button>
+        </div>
+      </footer>
+    </section>
+  </div>
+
+  <script>
+    const SONDAS = [
+      { id: "Q5d2c76", codigo: "11734", nombre: "Centro Escolar Reino de Dinamarca", departamento: "San Salvador", municipio: "San Salvador", zona: "Central", estado: "online", velocidad: 38, lat: 13.70, lng: -89.19 },
+      { id: "Q9ab211", codigo: "10482", nombre: "Centro Escolar Laboratorios", departamento: "San Salvador", municipio: "Mejicanos", zona: "Central", estado: "online", velocidad: 24, lat: 13.73, lng: -89.20 },
+      { id: "Q1f83aa", codigo: "22110", nombre: "Complejo Educativo Walter Thilo Deininger", departamento: "La Libertad", municipio: "Antiguo Cuscatlán", zona: "Central", estado: "online", velocidad: 62, lat: 13.67, lng: -89.24 },
+      { id: "Q73c012", codigo: "30551", nombre: "Centro Escolar Cantón El Jocotillo", departamento: "Santa Ana", municipio: "Metapán", zona: "Occidente", estado: "offline", velocidad: 0, lat: 14.29, lng: -89.45 },
+      { id: "Qabc901", codigo: "41220", nombre: "Instituto Nacional de Ahuachapán", departamento: "Ahuachapán", municipio: "Ahuachapán", zona: "Occidente", estado: "online", velocidad: 18, lat: 13.92, lng: -89.84 },
+      { id: "Qf01bb2", codigo: "51003", nombre: "Centro Escolar República de Canadá", departamento: "Sonsonate", municipio: "Sonsonate", zona: "Occidente", estado: "online", velocidad: 42, lat: 13.72, lng: -89.72 },
+      { id: "Q8de433", codigo: "61390", nombre: "Complejo Educativo La Palma", departamento: "Chalatenango", municipio: "La Palma", zona: "Norte", estado: "offline", velocidad: 0, lat: 14.32, lng: -89.17 },
+      { id: "Q72fa93", codigo: "70218", nombre: "Centro Escolar San Rafael", departamento: "Cuscatlán", municipio: "Cojutepeque", zona: "Paracentral", estado: "online", velocidad: 21, lat: 13.80, lng: -88.94 },
+      { id: "Q091ae4", codigo: "80601", nombre: "Centro Escolar Marcelino García Flamenco", departamento: "La Paz", municipio: "Zacatecoluca", zona: "Paracentral", estado: "online", velocidad: 55, lat: 13.50, lng: -88.87 },
+      { id: "Qbba112", codigo: "91877", nombre: "Instituto Nacional de Ilobasco", departamento: "Cabañas", municipio: "Ilobasco", zona: "Paracentral", estado: "offline", velocidad: 0, lat: 13.84, lng: -88.84 },
+      { id: "Qcc0034", codigo: "10041", nombre: "Centro Escolar Doctor Sarbelio Navarrete", departamento: "San Vicente", municipio: "San Vicente", zona: "Paracentral", estado: "online", velocidad: 31, lat: 13.64, lng: -88.78 },
+      { id: "Qf7100c", codigo: "11239", nombre: "Centro Escolar Jiquilisco", departamento: "Usulután", municipio: "Jiquilisco", zona: "Oriente", estado: "online", velocidad: 47, lat: 13.32, lng: -88.58 },
+      { id: "Qdd82e1", codigo: "12164", nombre: "Instituto Nacional Isidro Menéndez", departamento: "San Miguel", municipio: "San Miguel", zona: "Oriente", estado: "online", velocidad: 71, lat: 13.48, lng: -88.18 },
+      { id: "Q7ac812", codigo: "13270", nombre: "Centro Escolar Perquín", departamento: "Morazán", municipio: "Perquín", zona: "Oriente", estado: "offline", velocidad: 0, lat: 13.96, lng: -88.16 },
+      { id: "Q221fd9", codigo: "14118", nombre: "Centro Escolar La Unión", departamento: "La Unión", municipio: "La Unión", zona: "Oriente", estado: "online", velocidad: 39, lat: 13.34, lng: -87.84 },
+      { id: "Q8121de", codigo: "11772", nombre: "Centro Escolar República de Alemania", departamento: "San Salvador", municipio: "Soyapango", zona: "Central", estado: "online", velocidad: 28, lat: 13.71, lng: -89.14 },
+      { id: "Q665f09", codigo: "11888", nombre: "Centro Escolar Japón", departamento: "San Salvador", municipio: "Apopa", zona: "Central", estado: "offline", velocidad: 0, lat: 13.80, lng: -89.18 },
+      { id: "Q420be2", codigo: "22303", nombre: "Centro Escolar El Puerto", departamento: "La Libertad", municipio: "La Libertad", zona: "Central", estado: "online", velocidad: 35, lat: 13.49, lng: -89.32 },
+      { id: "Q660ac1", codigo: "41448", nombre: "Centro Escolar Tacuba", departamento: "Ahuachapán", municipio: "Tacuba", zona: "Occidente", estado: "online", velocidad: 16, lat: 13.91, lng: -89.93 },
+      { id: "Q911be2", codigo: "12225", nombre: "Centro Escolar El Tránsito", departamento: "San Miguel", municipio: "El Tránsito", zona: "Oriente", estado: "offline", velocidad: 0, lat: 13.35, lng: -88.35 }
+    ];
+
+    const state = {
+      query: "",
+      active: new Map(),
+      selected: new Set(),
+      applied: new Set()
+    };
+
+    const $ = (id) => document.getElementById(id);
+    const normalize = (value) => String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
+    function matchesQuery(row) {
+      const q = normalize(state.query.trim());
+      if (!q) return true;
+      const haystack = normalize([
+        row.nombre,
+        row.codigo,
+        `CE ${row.codigo}`,
+        row.id,
+        row.departamento,
+        row.municipio,
+        row.zona,
+        row.estado === "online" ? "activo online verde" : "inactivo offline rojo"
+      ].join(" "));
+      return q.split(/\s+/).every((part) => haystack.includes(part));
+    }
+
+    function activeValues(type) {
+      return [...state.active.entries()].filter(([key]) => key.startsWith(`${type}:`)).map(([, value]) => value);
+    }
+
+    function matchesFacets(row) {
+      const deptos = activeValues("departamento");
+      const zonas = activeValues("zona");
+      const estados = activeValues("estado");
+      if (deptos.length && !deptos.includes(row.departamento)) return false;
+      if (zonas.length && !zonas.includes(row.zona)) return false;
+      if (estados.length && !estados.includes(row.estado)) return false;
+      return true;
+    }
+
+    function filteredRows() {
+      return SONDAS.filter((row) => matchesQuery(row) && matchesFacets(row));
+    }
+
+    function toggleFacet(type, value) {
+      const key = `${type}:${value}`;
+      if (state.active.has(key)) state.active.delete(key);
+      else state.active.set(key, value);
+      render();
+    }
+
+    function toggleSelected(id) {
+      if (state.selected.has(id)) state.selected.delete(id);
+      else state.selected.add(id);
+      render();
+    }
+
+    function selectVisible() {
+      for (const row of filteredRows()) state.selected.add(row.id);
+      render();
+    }
+
+    function clearAll() {
+      state.query = "";
+      state.active.clear();
+      state.selected.clear();
+      $("query").value = "";
+      render();
+    }
+
+    function applySelection() {
+      state.applied = new Set(state.selected);
+      closeSearch();
+      renderDashboard();
+    }
+
+    function countBy(field, rows = SONDAS) {
+      const counts = new Map();
+      for (const row of rows) counts.set(row[field], (counts.get(row[field]) || 0) + 1);
+      return [...counts.entries()].sort((a, b) => String(a[0]).localeCompare(String(b[0])));
+    }
+
+    function renderQuickFilters(rows) {
+      const filters = [
+        { type: "estado", value: "online", label: "Online", className: "green" },
+        { type: "estado", value: "offline", label: "Offline", className: "red" },
+        { type: "zona", value: "Central", label: "Zona Central" },
+        { type: "zona", value: "Occidente", label: "Occidente" },
+        { type: "zona", value: "Oriente", label: "Oriente" },
+        { type: "zona", value: "Paracentral", label: "Paracentral" }
+      ];
+      $("quickFilters").innerHTML = [
+        `<button class="chip amber" type="button" onclick="selectVisible()"><span class="mini-dot"></span>Seleccionar visibles</button>`,
+        ...filters.map((f) => {
+          const key = `${f.type}:${f.value}`;
+          const active = state.active.has(key) ? " active" : "";
+          return `<button class="chip ${f.className || ""}${active}" type="button" onclick="toggleFacet('${f.type}', '${f.value}')"><span class="mini-dot"></span>${f.label}</button>`;
+        })
+      ].join("");
+      $("resultMeta").textContent = `${rows.length} resultados`;
+    }
+
+    function renderFacets() {
+      const groups = [
+        ["departamento", "Departamento", countBy("departamento")],
+        ["zona", "Zona", countBy("zona")],
+        ["estado", "Estado", [["online", SONDAS.filter((s) => s.estado === "online").length], ["offline", SONDAS.filter((s) => s.estado === "offline").length]]]
+      ];
+
+      $("facets").innerHTML = groups.map(([type, title, values]) => `
+        <div class="facet-group">
+          <p class="facet-title">${title}</p>
+          <div class="facet-list">
+            ${values.map(([value, count]) => {
+              const key = `${type}:${value}`;
+              const label = type === "estado" ? (value === "online" ? "Online" : "Offline") : value;
+              return `<button class="facet ${state.active.has(key) ? "active" : ""}" type="button" onclick="toggleFacet('${type}', '${value}')"><span>${label}</span><span class="count">${count}</span></button>`;
+            }).join("")}
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderResults(rows) {
+      if (!rows.length) {
+        $("results").innerHTML = `<div class="empty">No hay coincidencias con esos criterios.</div>`;
+        return;
+      }
+      $("results").innerHTML = rows.map((row) => {
+        const selected = state.selected.has(row.id);
+        const online = row.estado === "online";
+        return `
+          <button class="result ${selected ? "selected" : ""}" type="button" onclick="toggleSelected('${row.id}')">
+            <span class="checkbox">${selected ? "✓" : ""}</span>
+            <span class="result-main">
+              <span class="result-title">
+                <strong>${row.nombre}</strong>
+                <span class="state ${online ? "" : "offline"}">${online ? "Online" : "Offline"}</span>
+              </span>
+              <span class="result-sub">
+                <code>CE ${row.codigo}</code>
+                <code>${row.id}</code>
+                <span>${row.departamento}</span>
+                <span>${row.municipio}</span>
+                <span>${row.zona}</span>
+              </span>
+            </span>
+            <span class="score">
+              <span>${row.velocidad ? `${row.velocidad} Mbps` : "sin velocidad"}</span>
+              <span class="bar"><span style="width:${Math.min(row.velocidad, 80) / 80 * 100}%"></span></span>
+            </span>
+          </button>
+        `;
+      }).join("");
+    }
+
+    function renderSelectedChips() {
+      const selected = SONDAS.filter((row) => state.selected.has(row.id));
+      $("selectedChips").innerHTML = selected.length
+        ? selected.slice(0, 8).map((row) => `
+          <button class="selected-chip" type="button" onclick="toggleSelected('${row.id}')"><span>${row.nombre}</span><b class="x">×</b></button>
+        `).join("") + (selected.length > 8 ? `<span class="selected-chip"><span>+${selected.length - 8} más</span></span>` : "")
+        : `<span class="meta">Sin selección específica: se mostrarían todas las sondas filtradas.</span>`;
+    }
+
+    function renderDashboard() {
+      const applied = SONDAS.filter((row) => state.applied.size ? state.applied.has(row.id) : true);
+      const online = applied.filter((row) => row.estado === "online").length;
+      const deptos = new Set(applied.map((row) => row.departamento)).size;
+      $("kpiTotal").textContent = applied.length;
+      $("kpiOnline").textContent = online;
+      $("kpiDeptos").textContent = deptos;
+      $("kpiSelected").textContent = state.applied.size;
+      $("topSummary").textContent = state.applied.size ? `${state.applied.size} seleccionadas` : "Todas las sondas";
+      $("triggerLabel").textContent = state.applied.size
+        ? `${state.applied.size} sondas seleccionadas`
+        : "Buscar sondas, escuelas, códigos, departamentos...";
+
+      $("mapPins").innerHTML = applied.map((row, index) => {
+        const x = 14 + ((index * 31) % 70);
+        const y = 18 + ((index * 23) % 64);
+        return `<span class="pin ${row.estado === "offline" ? "offline" : ""}" style="left:${x}%; top:${y}%;" title="${row.nombre}"></span>`;
+      }).join("");
+
+      $("selectedPreview").innerHTML = applied.slice(0, 8).map((row) => `
+        <div class="mini-row">
+          <div>
+            <strong>${row.nombre}</strong>
+            <small>CE ${row.codigo} · ${row.departamento} · ${row.id}</small>
+          </div>
+          <span class="state ${row.estado === "online" ? "" : "offline"}">${row.estado === "online" ? "Online" : "Offline"}</span>
+        </div>
+      `).join("") + (applied.length > 8 ? `<div class="mini-row"><strong>+${applied.length - 8} sondas más</strong><small>Resumen contra la selección aplicada</small></div>` : "");
+    }
+
+    function render() {
+      const rows = filteredRows();
+      renderQuickFilters(rows);
+      renderFacets();
+      renderResults(rows);
+      renderSelectedChips();
+    }
+
+    function openSearch() {
+      $("overlay").classList.add("open");
+      $("query").value = state.query;
+      render();
+      setTimeout(() => $("query").focus(), 40);
+    }
+
+    function closeSearch() {
+      $("overlay").classList.remove("open");
+    }
+
+    $("openSearch").addEventListener("click", openSearch);
+    $("closeSearch").addEventListener("click", closeSearch);
+    $("clearAll").addEventListener("click", clearAll);
+    $("applySelection").addEventListener("click", applySelection);
+    $("overlay").addEventListener("click", (event) => {
+      if (event.target === $("overlay")) closeSearch();
+    });
+    $("query").addEventListener("input", (event) => {
+      state.query = event.target.value;
+      render();
+    });
+    document.addEventListener("keydown", (event) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        openSearch();
+      }
+      if (event.key === "Escape") closeSearch();
+    });
+
+    renderDashboard();
+    render();
+  </script>
+</body>
+</html>

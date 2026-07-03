@@ -4,6 +4,7 @@ import { getDispositivos, getEscuelas } from "@/lib/queries";
 import { getSession } from "@/lib/auth";
 import { ROLES } from "@/lib/roles";
 import { getUserById } from "@/lib/usuarios";
+import { cleanDeviceId, getDepartamentoForDevice, getEscuelaForDevice, getZonaForDevice } from "@/lib/dashboard-filters";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
@@ -13,13 +14,15 @@ async function getDeviceList() {
     getEscuelas(),
   ]);
   return dispositivos.map((d) => {
-    const cleanId = (d.cpu_id || d.id).replace(/"/g, "").trim();
-    const esc = escuelas[cleanId] ?? escuelas[d.cpu_id] ?? escuelas[d.id];
+    const cleanId = cleanDeviceId(d);
+    const esc = getEscuelaForDevice(d, escuelas);
     return {
       id: cleanId,
       nombre: esc?.nombre_escuela || cleanId,
       online: d.online,
       codigo: d.codigo_mined || "",
+      departamento: getDepartamentoForDevice(d, escuelas),
+      zona: getZonaForDevice(d, escuelas),
     };
   });
 }
