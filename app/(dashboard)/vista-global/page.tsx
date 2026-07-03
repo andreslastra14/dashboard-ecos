@@ -2,6 +2,7 @@ import {
   getDispositivos,
   getEscuelas,
   getRegistrosRecientes,
+  getVelocidadBuckets,
   calcularUptimePorDispositivo,
   calcularCalidadRed,
 } from "@/lib/queries";
@@ -49,11 +50,15 @@ interface PageProps {
 
 export default async function Home({ searchParams }: PageProps) {
   const { sonda: sondaParam } = await searchParams;
-  const [dispositivos, escuelas, registros, casoStats] = await Promise.all([
+  const [dispositivos, escuelas, registros, casoStats, speedBuckets] = await Promise.all([
     getDispositivos(),
     getEscuelas(),
     getRegistrosRecientes(3000, 12),
     getCasoStats(),
+    // Serie de velocidad de las últimas 12h agregada en SQL a buckets de 5 min (~145 puntos).
+    // Reemplaza el cálculo desde `registros` que, al topar en 3000 filas (~5.600/hora),
+    // solo cubría ~30 min. Los buckets cubren las 12h completas y corren en ~140ms.
+    getVelocidadBuckets(12, sondaParam),
   ]);
 
   const filteredDispositivos = sondaParam
@@ -186,22 +191,10 @@ export default async function Home({ searchParams }: PageProps) {
       };
     });
 
-  // ── Speed chart from registros recientes (ultimas 12h) ─────
-  const speedData: SpeedPoint[] = [...filteredRegistros]
-    .reverse()
-    .map((r) => {
-      const ts = r.timestamp;
-      let tsNum = 0;
-      if (ts && typeof ts === "object" && "toDate" in ts) {
-        tsNum = (ts as { toDate: () => Date }).toDate().getTime();
-      }
-      return {
-        ts: tsNum,
-        descarga: r.eth_download_mbps || r.download_mbps,
-        subida: r.wifi_download_mbps,
-      };
-    })
-    .filter((p) => p.ts > 0);
+  // ── Speed chart: buckets de 5 min de las últimas 12h (agregados en SQL) ─────
+  // getVelocidadBuckets ya devuelve la forma SpeedPoint ({ ts, descarga, subida })
+  // cubriendo las 12h completas; el filtro por sonda se aplicó en la consulta.
+  const speedData: SpeedPoint[] = speedBuckets;
 
   // ── System health summary ─────────────────────────────────
   const onlineForHealth = filteredDispositivos.filter((d) => d.online);
