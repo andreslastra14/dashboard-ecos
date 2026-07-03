@@ -111,7 +111,6 @@ async function getEscuelasCols(): Promise<Set<string>> {
       `SELECT column_name FROM information_schema.columns WHERE table_name = 'escuelas'`,
     );
     escuelasColsCache = new Set(rows.map((r) => r.column_name.toLowerCase()));
-    console.log("[escuelas] columnas detectadas:", [...escuelasColsCache].sort().join(", "));
   } catch (err) {
     console.error("getEscuelasCols failed:", err);
     escuelasColsCache = new Set();
@@ -119,79 +118,11 @@ async function getEscuelasCols(): Promise<Set<string>> {
   return escuelasColsCache;
 }
 
-// Mapea una fila de la tabla `escuelas` (estado YA calculado) a Dispositivo.
-function escuelaRowToDispositivo(r: Record<string, unknown>): Dispositivo {
-  const sonda = String(r.sonda_id ?? r.codigo_mined ?? "");
-  const vel = Number(r.velocidad_promedio ?? 0) || 0;
-  // Estado robusto: usa la columna de estado si existe (estado_red/estado), en
-  // varios formatos; si no hay ninguna, deriva de la velocidad promedio (> 1 Mbps).
-  const estadoRaw = String(r.estado_red ?? r.estado ?? r.estado_conexion ?? "").toUpperCase().trim();
-  const online = estadoRaw
-    ? (estadoRaw === "OK" || estadoRaw === "ONLINE" || estadoRaw === "ACTIVA" || estadoRaw === "TRUE" || estadoRaw === "1")
-    : vel > 1;
-  const upsConectada = r.ups_conectada === true;
-  const ts = Date.now();
-  const ultimo_reporte = {
-    toDate: () => new Date(ts),
-    seconds: Math.floor(ts / 1000),
-    nanoseconds: 0,
-  } as import("./firebase").DbTimestamp;
-  return {
-    id: sonda,
-    cpu_id: sonda,
-    codigo_mined: String(r.codigo_mined ?? ""),
-    id_hardware: sonda,
-    version_sonda: "ecos",
-    online,
-    ultimo_reporte,
-    download_mbps: vel,
-    eth_download_mbps: vel,
-    wifi_download_mbps: 0,
-    latitud: Number(r.lat ?? 0),
-    longitud: Number(r.lon ?? 0),
-    gps_status: "N/A",
-    cpu_usage: 0,
-    ram_usage: 0,
-    disk_usage: 0,
-    temp_cpu: "N/A",
-    eth_latencia_ms: 0,
-    wifi_latencia_ms: 0,
-    web_check_mined: online ? "ACCESIBLE" : "SIN_CONEXION",
-    web_check_streaming: online ? "ACCESIBLE" : "SIN_CONEXION",
-    web_check_adultos: online ? "BLOQUEADO" : "SIN_CONEXION",
-    web_check_apuestas: online ? "BLOQUEADO" : "SIN_CONEXION",
-    ups_status: upsConectada ? "CON_LUZ" : "NORMAL",
-    ups_nivel: 0,
-    ups_conectada: upsConectada,
-    ups_modo: "LINEA",
-    link_rpi_connect: "",
-    alerta_enviada: false,
-    ticket_activo: !online,
-  };
-}
-
-// Estado por sonda. Camino RÁPIDO: tabla `escuelas` (estado materializado, O(#escuelas)).
-// Si no tiene las columnas necesarias o falla, cae a la telemetría cruda (más lento).
+// Estado por sonda desde la TELEMETRÍA (registros_ecos_master): es la única fuente del
+// estado real (online/velocidad). La tabla `escuelas` solo tiene inventario (nombre/coords),
+// que se resuelve aparte en getEscuelas. Acotado a las últimas 24h para no escanear toda la
+// historia (con el índice (sonda_id, fecha_registro) esto corre en ms).
 export async function getDispositivos(): Promise<Dispositivo[]> {
-  try {
-    const cols = await getEscuelasCols();
-    if (cols.has("sonda_id")) {
-      // Ya NO exige `estado_red`: usa `escuelas` siempre que exista (rápido) y deriva el estado
-      // de la columna que haya (estado_red/estado/...) o de la velocidad. Antes, si no detectaba
-      // `estado_red`, caía al fallback de registros_ecos_master (sin índice, ~15s => carga lenta).
-      const want = ["sonda_id", "estado_red", "estado", "estado_conexion", "nombre_escuela", "codigo_mined", "velocidad_promedio", "ups_conectada", "lat", "lon"];
-      const sel = want.filter((c) => cols.has(c));
-      const rows = await query<Record<string, unknown>>(
-        `SELECT ${sel.map((c) => `"${c}"`).join(", ")} FROM escuelas WHERE sonda_id IS NOT NULL`,
-      );
-      if (rows.length) return rows.map(escuelaRowToDispositivo);
-    }
-  } catch (err) {
-    console.error("getDispositivos (escuelas) failed, fallback a master:", err);
-  }
-  // Fallback: telemetría cruda de registros_ecos_master. ACOTADO a 24h: el DISTINCT ON
-  // sin filtro de fecha escaneaba TODA la historia (lento, se colgaba); con la ventana
-  // reciente solo toca datos calientes (~ms) y captura toda sonda que reportó en 24h.
   try {
     const rows = await query<MasterRow>(
       `SELECT DISTINCT ON (sonda_id) ${MASTER_COLS}
