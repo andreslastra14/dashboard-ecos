@@ -129,7 +129,7 @@ export async function getDispositivos(): Promise<Dispositivo[]> {
       `SELECT DISTINCT ON (sonda_id) ${MASTER_COLS}
        FROM registros_ecos_master
        WHERE sonda_id IS NOT NULL
-         AND fecha_registro >= NOW() - INTERVAL '24 hours'
+         AND fecha_registro >= (SELECT MAX(fecha_registro) FROM registros_ecos_master) - INTERVAL '24 hours'
        ORDER BY sonda_id, fecha_registro DESC`
     );
     const webChecks = await getLatestWebChecks();
