@@ -125,11 +125,18 @@ async function getEscuelasCols(): Promise<Set<string>> {
 // historia (con el índice (sonda_id, fecha_registro) esto corre en ms).
 export async function getDispositivos(): Promise<Dispositivo[]> {
   try {
+    // CTE MATERIALIZED: fuerza a filtrar por fecha PRIMERO (usa idx_master_fecha -> subconjunto de
+    // ~24h) y recién ahí hace el DISTINCT ON. Sin esto, el planner escaneaba todo el índice
+    // (sonda_id, fecha) para el ORDER BY -> 10s. Con la CTE baja a ~ms.
     const rows = await query<MasterRow>(
-      `SELECT DISTINCT ON (sonda_id) ${MASTER_COLS}
-       FROM registros_ecos_master
-       WHERE sonda_id IS NOT NULL
-         AND fecha_registro >= (SELECT MAX(fecha_registro) FROM registros_ecos_master) - INTERVAL '24 hours'
+      `WITH recientes AS MATERIALIZED (
+         SELECT ${MASTER_COLS}
+         FROM registros_ecos_master
+         WHERE sonda_id IS NOT NULL
+           AND fecha_registro >= (SELECT MAX(fecha_registro) FROM registros_ecos_master) - INTERVAL '24 hours'
+       )
+       SELECT DISTINCT ON (sonda_id) ${MASTER_COLS}
+       FROM recientes
        ORDER BY sonda_id, fecha_registro DESC`
     );
     const webChecks = await getLatestWebChecks();
