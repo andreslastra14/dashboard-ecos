@@ -1,8 +1,38 @@
+import { unstable_cache } from "next/cache";
 import { query } from "./postgres";
-import type { Dispositivo, Escuela, RegistroHistorico } from "./firebase";
+import type { DbTimestamp, Dispositivo, Escuela, RegistroHistorico } from "./firebase";
 
 // Consider a sonda "online" if it reported within the last 5 minutes
 const ONLINE_WINDOW_MS = 5 * 60 * 1000;
+
+// El layout y las páginas llaman estas consultas en CADA request (las rutas del
+// dashboard son dinámicas por la cookie de sesión, así que el `revalidate` de
+// página no aplica). unstable_cache corre la consulta pesada 1 vez por minuto;
+// el resto de requests sirve del data cache y navegar queda fluido.
+const CACHE_REVALIDATE_S = 60;
+
+// unstable_cache serializa el resultado: métodos como toDate() NO sobreviven.
+// Las funciones cacheadas devuelven epoch ms planos y los exports públicos
+// rehidratan el DbTimestamp (lib/sla.ts y lib/pdf hacen `"toDate" in ts` y
+// caerían a 0 en silencio si el método se pierde).
+type DispositivoCacheado = Omit<Dispositivo, "ultimo_reporte"> & { ultimo_reporte_ms: number };
+type RegistroCacheado = Omit<RegistroHistorico, "timestamp"> & { timestamp_ms: number };
+
+function makeDbTimestamp(ms: number): DbTimestamp {
+  return {
+    toDate: () => new Date(ms),
+    seconds: Math.floor(ms / 1000),
+    nanoseconds: (ms % 1000) * 1_000_000,
+  };
+}
+
+function hydrateDispositivo({ ultimo_reporte_ms, ...d }: DispositivoCacheado): Dispositivo {
+  return { ...d, ultimo_reporte: makeDbTimestamp(ultimo_reporte_ms) };
+}
+
+function hydrateRegistro({ timestamp_ms, ...r }: RegistroCacheado): RegistroHistorico {
+  return { ...r, timestamp: makeDbTimestamp(timestamp_ms) };
+}
 
 type MasterRow = {
   sonda_id: string;
@@ -29,7 +59,7 @@ const MASTER_COLS =
   "latitud, longitud, gps_status, ups_estado, ups_nivel, cpu_temp, " +
   "cpu_uso, ram_uso, eth_latencia, wifi_latencia, fecha_registro";
 
-function rowToDispositivo(r: MasterRow, webChecks: Map<string, Record<string, string>>): Dispositivo {
+function rowToDispositivo(r: MasterRow, webChecks: Map<string, Record<string, string>>): DispositivoCacheado {
   const now = Date.now();
   const ts = r.fecha_registro.getTime();
   // Activa solo si reportó hace poco Y la descarga total (eth + wifi) es > 1 Mbps.
@@ -38,13 +68,6 @@ function rowToDispositivo(r: MasterRow, webChecks: Map<string, Record<string, st
   const descargaTotal = Number(r.eth_download ?? 0) + Number(r.wifi_download ?? 0);
   const online = reporteReciente && descargaTotal > 1;
   const checks = webChecks.get(r.sonda_id) || {};
-  const seconds = Math.floor(ts / 1000);
-  const nanoseconds = (ts % 1000) * 1_000_000;
-  const ultimo_reporte = {
-    toDate: () => new Date(ts),
-    seconds,
-    nanoseconds,
-  } as import("./firebase").DbTimestamp;
 
   const eth = Number(r.eth_download ?? 0);
   const wifi = Number(r.wifi_download ?? 0);
@@ -55,7 +78,7 @@ function rowToDispositivo(r: MasterRow, webChecks: Map<string, Record<string, st
     id_hardware: r.sonda_id,
     version_sonda: "ecos",
     online,
-    ultimo_reporte,
+    ultimo_reporte_ms: ts,
     download_mbps: Math.max(eth, wifi),
     eth_download_mbps: eth,
     wifi_download_mbps: wifi,
@@ -118,17 +141,11 @@ async function getEscuelasCols(): Promise<Set<string>> {
 }
 
 // Mapea una fila de la tabla `escuelas` (estado YA calculado) a Dispositivo.
-function escuelaRowToDispositivo(r: Record<string, unknown>): Dispositivo {
+function escuelaRowToDispositivo(r: Record<string, unknown>): DispositivoCacheado {
   const sonda = String(r.sonda_id ?? r.codigo_mined ?? "");
   const online = String(r.estado_red ?? "").toUpperCase() === "OK";
   const vel = Number(r.velocidad_promedio ?? 0) || 0;
   const upsConectada = r.ups_conectada === true;
-  const ts = Date.now();
-  const ultimo_reporte = {
-    toDate: () => new Date(ts),
-    seconds: Math.floor(ts / 1000),
-    nanoseconds: 0,
-  } as import("./firebase").DbTimestamp;
   return {
     id: sonda,
     cpu_id: sonda,
@@ -136,7 +153,7 @@ function escuelaRowToDispositivo(r: Record<string, unknown>): Dispositivo {
     id_hardware: sonda,
     version_sonda: "ecos",
     online,
-    ultimo_reporte,
+    ultimo_reporte_ms: Date.now(),
     download_mbps: vel,
     eth_download_mbps: vel,
     wifi_download_mbps: 0,
@@ -165,7 +182,7 @@ function escuelaRowToDispositivo(r: Record<string, unknown>): Dispositivo {
 
 // Estado por sonda. Camino RÁPIDO: tabla `escuelas` (estado materializado, O(#escuelas)).
 // Si no tiene las columnas necesarias o falla, cae a la telemetría cruda (más lento).
-export async function getDispositivos(): Promise<Dispositivo[]> {
+async function getDispositivosRaw(): Promise<DispositivoCacheado[]> {
   try {
     const cols = await getEscuelasCols();
     if (cols.has("sonda_id") && cols.has("estado_red")) {
@@ -198,9 +215,18 @@ export async function getDispositivos(): Promise<Dispositivo[]> {
   }
 }
 
+const getDispositivosCached = unstable_cache(getDispositivosRaw, ["dispositivos"], {
+  revalidate: CACHE_REVALIDATE_S,
+  tags: ["dispositivos"],
+});
+
+export async function getDispositivos(): Promise<Dispositivo[]> {
+  return (await getDispositivosCached()).map(hydrateDispositivo);
+}
+
 // Inventario de escuelas (nombre + coords). Camino RÁPIDO: tabla `escuelas` real.
 // Fallback: sintetizar desde registros_ecos_master (más lento) si la tabla no sirve.
-export async function getEscuelas(): Promise<Record<string, Escuela>> {
+async function getEscuelasRaw(): Promise<Record<string, Escuela>> {
   const buildEscuela = (sonda: string, nombre: string, lat: number, lng: number, cod: string): Escuela => ({
     id: sonda,
     nombre_escuela: nombre,
@@ -267,10 +293,16 @@ export async function getEscuelas(): Promise<Record<string, Escuela>> {
   }
 }
 
+// Escuela y las coords son JSON plano (sin métodos): se cachean directo.
+export const getEscuelas = unstable_cache(getEscuelasRaw, ["escuelas"], {
+  revalidate: CACHE_REVALIDATE_S,
+  tags: ["escuelas"],
+});
+
 // Coordenadas REALES de cada escuela desde la tabla `escuelas`, indexadas por
 // código MINED. El mapa ubica cada sonda por su codigo_mined contra este mapa
 // (en vez de apilar las que no tienen GPS en coordenadas "demo").
-export async function getCoordsEscuelas(): Promise<
+async function getCoordsEscuelasRaw(): Promise<
   Record<string, { nombre: string; lat: number; lng: number }>
 > {
   try {
@@ -299,14 +331,14 @@ export async function getCoordsEscuelas(): Promise<
   }
 }
 
-function rowToRegistro(r: MasterRow & { id: number | string }): RegistroHistorico {
+export const getCoordsEscuelas = unstable_cache(getCoordsEscuelasRaw, ["coords-escuelas"], {
+  revalidate: CACHE_REVALIDATE_S,
+  tags: ["escuelas"],
+});
+
+function rowToRegistro(r: MasterRow & { id: number | string }): RegistroCacheado {
   const ts = r.fecha_registro.getTime();
   const online = true; // historical rows always represent a successful report
-  const timestamp = {
-    toDate: () => new Date(ts),
-    seconds: Math.floor(ts / 1000),
-    nanoseconds: (ts % 1000) * 1_000_000,
-  } as import("./firebase").DbTimestamp;
 
   const eth = Number(r.eth_download ?? 0);
   const wifi = Number(r.wifi_download ?? 0);
@@ -327,7 +359,7 @@ function rowToRegistro(r: MasterRow & { id: number | string }): RegistroHistoric
     ups_nivel: Number(r.ups_nivel ?? 0),
     cpu_usage: Number(r.cpu_uso ?? 0),
     ram_usage: Number(r.ram_uso ?? 0),
-    timestamp,
+    timestamp_ms: ts,
   };
 }
 
@@ -341,7 +373,7 @@ export async function getRegistrosDispositivo(cpuId: string, limite = 100): Prom
        LIMIT $2`,
       [cpuId, limite]
     );
-    return rows.map(rowToRegistro);
+    return rows.map((r) => hydrateRegistro(rowToRegistro(r)));
   } catch (err) {
     console.error("getRegistrosDispositivo failed:", err);
     return [];
@@ -352,7 +384,7 @@ export async function getRegistrosDispositivo(cpuId: string, limite = 100): Prom
 // Escala a miles de sondas: devuelve ~1 punto por bucket (p.ej. 144 en 12h a 5 min),
 // en vez de traer filas crudas que se truncan con el LIMIT. Sin sondaId agrega TODAS
 // las sondas (promedio de red); con sondaId, solo esa sonda.
-export async function getVelocidadBuckets(
+async function getVelocidadBucketsRaw(
   horas = 12,
   sondaId?: string,
   bucketMin = 5,
@@ -387,7 +419,13 @@ export async function getVelocidadBuckets(
   }
 }
 
-export async function getRegistrosRecientes(limite = 3000, horas = 12): Promise<RegistroHistorico[]> {
+// Los args (horas, sondaId, bucketMin) entran solos a la cache key.
+export const getVelocidadBuckets = unstable_cache(getVelocidadBucketsRaw, ["velocidad-buckets"], {
+  revalidate: CACHE_REVALIDATE_S,
+  tags: ["registros"],
+});
+
+async function getRegistrosRecientesRaw(limite = 3000, horas = 12): Promise<RegistroCacheado[]> {
   try {
     const cutoff = new Date(Date.now() - horas * 60 * 60 * 1000);
     const rows = await query<MasterRow & { id: number }>(
@@ -405,6 +443,15 @@ export async function getRegistrosRecientes(limite = 3000, horas = 12): Promise<
   }
 }
 
+const getRegistrosRecientesCached = unstable_cache(getRegistrosRecientesRaw, ["registros-recientes"], {
+  revalidate: CACHE_REVALIDATE_S,
+  tags: ["registros"],
+});
+
+export async function getRegistrosRecientes(limite = 3000, horas = 12): Promise<RegistroHistorico[]> {
+  return (await getRegistrosRecientesCached(limite, horas)).map(hydrateRegistro);
+}
+
 export async function getRegistrosPorRango(desde: Date, hasta: Date): Promise<RegistroHistorico[]> {
   try {
     const rows = await query<MasterRow & { id: number }>(
@@ -415,7 +462,7 @@ export async function getRegistrosPorRango(desde: Date, hasta: Date): Promise<Re
        LIMIT 10000`,
       [desde, hasta]
     );
-    return rows.map(rowToRegistro);
+    return rows.map((r) => hydrateRegistro(rowToRegistro(r)));
   } catch (err) {
     console.error("getRegistrosPorRango failed:", err);
     return [];
