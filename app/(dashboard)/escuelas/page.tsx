@@ -191,7 +191,7 @@ export default async function EscuelasPage({
                     <td className="px-4 py-3">{s.eth_download_mbps > 0 ? `${s.eth_download_mbps.toFixed(1)} Mbps` : "—"}</td>
                     <td className="px-4 py-3">{s.wifi_download_mbps > 0 ? `${s.wifi_download_mbps.toFixed(1)} Mbps` : "—"}</td>
                     <td className="px-4 py-3">
-                      <span className={`text-xs font-medium ${s.ups_status === "CONECTADA" ? "text-green-700" : "text-gray-500"}`}>
+                      <span className={`text-xs font-medium ${s.ups_status === "En línea" ? "text-green-700" : "text-gray-500"}`}>
                         {s.ups_status} {s.ups_nivel > 0 ? `(${s.ups_nivel}%)` : ""}
                       </span>
                     </td>

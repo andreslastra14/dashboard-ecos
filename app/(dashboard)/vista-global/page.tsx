@@ -224,12 +224,9 @@ export default async function Home({ searchParams }: PageProps) {
   const sondasEnRiesgo = filteredDispositivos.filter(
     (d) => d.download_mbps < 5 || !d.online
   ).length;
+  // Problema de UPS = la escuela está corriendo con batería (corte de luz).
   const upsProblemas = filteredDispositivos.filter(
-    (d) =>
-      d.ups_status &&
-      d.ups_status !== "normal" &&
-      d.ups_status !== "Online" &&
-      d.ups_conectada
+    (d) => d.ups_modo === "BATERIA"
   ).length;
 
   const uptimeStats = calcularUptimePorDispositivo(filteredRegistros);

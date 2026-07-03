@@ -29,6 +29,18 @@ const MASTER_COLS =
   "latitud, longitud, gps_status, ups_estado, ups_nivel, cpu_temp, " +
   "cpu_uso, ram_uso, eth_latencia, wifi_latencia, fecha_registro";
 
+// Traduce el código NUT de la UPS a una etiqueta legible en español.
+function upsEstadoLabel(estado: string | null): string {
+  const raw = (estado ?? "").trim();
+  const code = raw.toUpperCase();
+  if (code.startsWith("OB")) return "En batería";
+  if (code.startsWith("OL")) return "En línea";
+  if (raw === "Driver not connected") return "Sin comunicación";
+  if (raw === "Data stale") return "Datos desactualizados";
+  if (raw === "") return "Sin datos";
+  return raw;
+}
+
 function rowToDispositivo(r: MasterRow, webChecks: Map<string, Record<string, string>>): Dispositivo {
   const now = Date.now();
   const ts = r.fecha_registro.getTime();
@@ -48,6 +60,13 @@ function rowToDispositivo(r: MasterRow, webChecks: Map<string, Record<string, st
 
   const eth = Number(r.eth_download ?? 0);
   const wifi = Number(r.wifi_download ?? 0);
+
+  // UPS: la sonda reporta códigos NUT estándar (no "CON_LUZ"). OL* = en línea (con corriente),
+  // OB* = en batería (corte de luz). "Driver not connected"/null = la UPS no responde.
+  const upsCode = (r.ups_estado ?? "").trim().toUpperCase();
+  const upsEnLinea = upsCode.startsWith("OL");
+  const upsEnBateria = upsCode.startsWith("OB");
+
   return {
     id: r.sonda_id,
     cpu_id: r.sonda_id,
@@ -72,10 +91,10 @@ function rowToDispositivo(r: MasterRow, webChecks: Map<string, Record<string, st
     web_check_streaming: checks.Netflix ?? checks.STREAMING ?? (online ? "ACCESIBLE" : "SIN_CONEXION"),
     web_check_adultos: checks.Adultos ?? checks.ADULTOS ?? (online ? "BLOQUEADO" : "SIN_CONEXION"),
     web_check_apuestas: checks.Apuestas ?? checks.APUESTAS ?? (online ? "BLOQUEADO" : "SIN_CONEXION"),
-    ups_status: r.ups_estado ?? "NORMAL",
+    ups_status: upsEstadoLabel(r.ups_estado),
     ups_nivel: Number(r.ups_nivel ?? 0),
-    ups_conectada: r.ups_estado === "CON_LUZ",
-    ups_modo: r.ups_estado === "CON_BAT" ? "BATERIA" : "LINEA",
+    ups_conectada: upsEnLinea,
+    ups_modo: upsEnBateria ? "BATERIA" : "LINEA",
     link_rpi_connect: "",
     alerta_enviada: false,
     ticket_activo: !online,
@@ -283,7 +302,7 @@ function rowToRegistro(r: MasterRow & { id: number | string }): RegistroHistoric
     web_check_streaming: online ? "ACCESIBLE" : "SIN_CONEXION",
     web_check_adultos: online ? "BLOQUEADO" : "SIN_CONEXION",
     web_check_apuestas: online ? "BLOQUEADO" : "SIN_CONEXION",
-    ups_status: r.ups_estado ?? "NORMAL",
+    ups_status: upsEstadoLabel(r.ups_estado),
     ups_nivel: Number(r.ups_nivel ?? 0),
     cpu_usage: Number(r.cpu_uso ?? 0),
     ram_usage: Number(r.ram_uso ?? 0),
