@@ -41,6 +41,9 @@ export async function GET() {
     "CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_master_sonda_fecha ON registros_ecos_master (sonda_id, fecha_registro DESC)",
     "CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_master_fecha ON registros_ecos_master (fecha_registro DESC)",
     "CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_web_sonda_sitio_fecha ON resultados_detallados_web (sonda_id, sitio_nombre, fecha_registro DESC)",
+    // ANALYZE: actualiza las estadísticas para que el planner USE los índices recién creados.
+    "ANALYZE registros_ecos_master",
+    "ANALYZE resultados_detallados_web",
   ];
   const out: string[] = [];
   for (const sql of statements) {
