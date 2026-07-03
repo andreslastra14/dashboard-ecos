@@ -125,19 +125,30 @@ async function getEscuelasCols(): Promise<Set<string>> {
 // historia (con el índice (sonda_id, fecha_registro) esto corre en ms).
 export async function getDispositivos(): Promise<Dispositivo[]> {
   try {
-    // CTE MATERIALIZED: fuerza a filtrar por fecha PRIMERO (usa idx_master_fecha -> subconjunto de
-    // ~24h) y recién ahí hace el DISTINCT ON. Sin esto, el planner escaneaba todo el índice
-    // (sonda_id, fecha) para el ORDER BY -> 10s. Con la CTE baja a ~ms.
+    // Loose index scan (skip scan emulado): la CTE recursiva recorre SOLO los sonda_id distintos
+    // (~184) usando idx_master_sonda_fecha (sonda_id, fecha DESC) — sin escanear toda la tabla —,
+    // y por cada sonda hace un seek LIMIT 1 a su última fila. Cubre TODAS las sondas que han
+    // reportado (no depende de `escuelas`, así no se pierden sondas recién instaladas). Medido:
+    // ~35ms y 184 filas, vs. ~350ms/531ms del DISTINCT ON con ventana de 24h (que además omitía
+    // sondas silenciosas >24h). Las sondas sin reporte reciente salen offline vía rowToDispositivo.
     const rows = await query<MasterRow>(
-      `WITH recientes AS MATERIALIZED (
-         SELECT ${MASTER_COLS}
-         FROM registros_ecos_master
-         WHERE sonda_id IS NOT NULL
-           AND fecha_registro >= (SELECT MAX(fecha_registro) FROM registros_ecos_master) - INTERVAL '24 hours'
+      `WITH RECURSIVE sondas AS (
+         (SELECT sonda_id FROM registros_ecos_master WHERE sonda_id IS NOT NULL ORDER BY sonda_id LIMIT 1)
+         UNION ALL
+         SELECT (SELECT r.sonda_id FROM registros_ecos_master r
+                 WHERE r.sonda_id > s.sonda_id AND r.sonda_id IS NOT NULL
+                 ORDER BY r.sonda_id LIMIT 1)
+         FROM sondas s WHERE s.sonda_id IS NOT NULL
        )
-       SELECT DISTINCT ON (sonda_id) ${MASTER_COLS}
-       FROM recientes
-       ORDER BY sonda_id, fecha_registro DESC`
+       SELECT m.* FROM sondas s
+       CROSS JOIN LATERAL (
+         SELECT ${MASTER_COLS}
+         FROM registros_ecos_master r
+         WHERE r.sonda_id = s.sonda_id
+         ORDER BY r.fecha_registro DESC
+         LIMIT 1
+       ) m
+       WHERE s.sonda_id IS NOT NULL`
     );
     const webChecks = await getLatestWebChecks();
     return rows.map((r) => rowToDispositivo(r, webChecks));
@@ -327,8 +338,6 @@ export async function getVelocidadBuckets(
        ORDER BY 1`,
       params,
     );
-    console.log(`[velbuckets] horas=${horas} buckets=${rows.length}` +
-      (rows.length ? ` primer=${rows[0].bucket} ultimo=${rows[rows.length - 1].bucket}` : ""));
     return rows.map((r) => ({
       ts: (r.bucket instanceof Date ? r.bucket : new Date(r.bucket as unknown as string)).getTime(),
       descarga: Number(r.descarga ?? 0),
