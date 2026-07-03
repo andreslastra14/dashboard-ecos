@@ -120,8 +120,13 @@ async function getEscuelasCols(): Promise<Set<string>> {
 // Mapea una fila de la tabla `escuelas` (estado YA calculado) a Dispositivo.
 function escuelaRowToDispositivo(r: Record<string, unknown>): Dispositivo {
   const sonda = String(r.sonda_id ?? r.codigo_mined ?? "");
-  const online = String(r.estado_red ?? "").toUpperCase() === "OK";
   const vel = Number(r.velocidad_promedio ?? 0) || 0;
+  // Estado robusto: usa la columna de estado si existe (estado_red/estado), en
+  // varios formatos; si no hay ninguna, deriva de la velocidad promedio (> 1 Mbps).
+  const estadoRaw = String(r.estado_red ?? r.estado ?? r.estado_conexion ?? "").toUpperCase().trim();
+  const online = estadoRaw
+    ? (estadoRaw === "OK" || estadoRaw === "ONLINE" || estadoRaw === "ACTIVA" || estadoRaw === "TRUE" || estadoRaw === "1")
+    : vel > 1;
   const upsConectada = r.ups_conectada === true;
   const ts = Date.now();
   const ultimo_reporte = {
@@ -168,8 +173,11 @@ function escuelaRowToDispositivo(r: Record<string, unknown>): Dispositivo {
 export async function getDispositivos(): Promise<Dispositivo[]> {
   try {
     const cols = await getEscuelasCols();
-    if (cols.has("sonda_id") && cols.has("estado_red")) {
-      const want = ["sonda_id", "estado_red", "nombre_escuela", "codigo_mined", "velocidad_promedio", "ups_conectada", "lat", "lon"];
+    if (cols.has("sonda_id")) {
+      // Ya NO exige `estado_red`: usa `escuelas` siempre que exista (rápido) y deriva el estado
+      // de la columna que haya (estado_red/estado/...) o de la velocidad. Antes, si no detectaba
+      // `estado_red`, caía al fallback de registros_ecos_master (sin índice, ~15s => carga lenta).
+      const want = ["sonda_id", "estado_red", "estado", "estado_conexion", "nombre_escuela", "codigo_mined", "velocidad_promedio", "ups_conectada", "lat", "lon"];
       const sel = want.filter((c) => cols.has(c));
       const rows = await query<Record<string, unknown>>(
         `SELECT ${sel.map((c) => `"${c}"`).join(", ")} FROM escuelas WHERE sonda_id IS NOT NULL`,
@@ -359,8 +367,10 @@ export async function getVelocidadBuckets(
 ): Promise<{ ts: number; descarga: number; subida: number }[]> {
   try {
     const bucketSec = bucketMin * 60;
-    const cutoff = new Date(Date.now() - horas * 60 * 60 * 1000);
-    const params: unknown[] = [bucketSec, cutoff];
+    // Rango relativo al ÚLTIMO dato real (MAX fecha_registro), no al reloj del server:
+    // las sondas guardan hora local (naive) y NOW() es UTC, así que restar horas al reloj
+    // capturaba mal el rango (solo salía un tramo). Usar MAX evita ese desfase de zona horaria.
+    const params: unknown[] = [bucketSec, horas];
     let sondaFilter = "";
     if (sondaId) {
       params.push(sondaId);
@@ -371,7 +381,7 @@ export async function getVelocidadBuckets(
               AVG(eth_download) FILTER (WHERE eth_download > 0) AS descarga,
               AVG(wifi_download) FILTER (WHERE wifi_download > 0) AS subida
        FROM registros_ecos_master
-       WHERE fecha_registro >= $2 ${sondaFilter}
+       WHERE fecha_registro >= (SELECT MAX(fecha_registro) FROM registros_ecos_master) - ($2 * INTERVAL '1 hour') ${sondaFilter}
        GROUP BY 1
        ORDER BY 1`,
       params,
