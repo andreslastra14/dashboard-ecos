@@ -22,13 +22,13 @@ function getCredentials(): Record<string, unknown> {
 }
 
 async function createPool(): Promise<Pool> {
-  // Modo IAM (Cloud SQL Connector) si están las vars, sino fallback directo
+  // Modo Cloud SQL Connector si están las vars del SA, sino fallback directo
   // por host+password (útil para `.env.local` y deploys sin IAM configurado).
-  const useIam =
+  const useConnector =
     !!process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON &&
     !!process.env.INSTANCE_CONNECTION_NAME;
 
-  if (useIam) {
+  if (useConnector) {
     const auth = new GoogleAuth({
       credentials: getCredentials(),
       scopes: [
@@ -39,23 +39,33 @@ async function createPool(): Promise<Pool> {
 
     const connector = new Connector({ auth });
 
+    // Con DB_PASS presente se autentica como usuario nativo de Postgres
+    // (default "postgres", que tiene permiso sobre la tabla `escuelas`);
+    // el túnel lo sigue abriendo el SA. Sin DB_PASS, autenticación IAM
+    // (el SA no puede leer `escuelas` hasta que le den GRANT).
+    const usePassword = !!process.env.DB_PASS;
+
     const clientOpts = await connector.getOptions({
       instanceConnectionName: process.env.INSTANCE_CONNECTION_NAME!,
       ipType: IpAddressTypes.PUBLIC,
-      authType: AuthTypes.IAM,
+      authType: usePassword ? AuthTypes.PASSWORD : AuthTypes.IAM,
     });
 
     return new Pool({
       ...clientOpts,
       database: process.env.DB_NAME,
-      user: process.env.DB_USER,
-      password: async () => {
-        const client = await auth.getClient();
-        const res = await client.getAccessToken();
-        const t = typeof res === "string" ? res : res.token;
-        if (!t) throw new Error("Failed to obtain IAM access token");
-        return t;
-      },
+      // En el camino password NO usar DB_USER: en Vercel vale la identidad
+      // IAM del SA (sonda-operador-ecos@ecos-sonda.iam), no un rol nativo.
+      user: usePassword ? process.env.DB_PG_USER ?? "postgres" : process.env.DB_USER,
+      password: usePassword
+        ? process.env.DB_PASS
+        : async () => {
+            const client = await auth.getClient();
+            const res = await client.getAccessToken();
+            const t = typeof res === "string" ? res : res.token;
+            if (!t) throw new Error("Failed to obtain IAM access token");
+            return t;
+          },
       // Serverless en Vercel: cada lambda corre con su propio pool.
       // max=3 permite que las 4 queries del Promise.all del home corran
       // 3 en paralelo (el otro espera ~500ms). Con N lambdas concurrentes
