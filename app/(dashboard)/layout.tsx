@@ -34,16 +34,17 @@ export default async function DashboardLayout({
 
   // Refrescar rol desde DB en cada request — la cookie JWT puede tener un
   // role viejo si el cargo cambió en DB después del login (cookie dura 7d).
-  // Si el usuario fue eliminado o desactivado, expulsar la sesión.
-  const fresh = await getUserById(session.userId).catch(() => null);
+  // En paralelo se arma la lista de sondas para no sumar latencias antes de pintar.
+  const [fresh, devices] = await Promise.all([
+    getUserById(session.userId).catch(() => null),
+    getDeviceList(),
+  ]);
   if (!fresh || !fresh.activo) redirect("/login");
   // Cambio de contraseña obligatorio: si el usuario aún tiene la contraseña
   // genérica (requiere_cambio_pwd), bloquea el dashboard hasta que la cambie.
   if (fresh.requiere_cambio_pwd) redirect("/cambiar-password");
   const role = fresh.role;
   const nombre = fresh.nombre || session.nombre;
-
-  const devices = await getDeviceList();
 
   // For maestro role, only show their assigned device
   const filteredDevices = role === "maestro" && session.sondaAsignada
