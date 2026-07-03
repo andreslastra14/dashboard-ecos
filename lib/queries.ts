@@ -85,11 +85,12 @@ function rowToDispositivo(r: MasterRow, webChecks: Map<string, Record<string, st
 async function getLatestWebChecks(): Promise<Map<string, Record<string, string>>> {
   const map = new Map<string, Record<string, string>>();
   try {
-    // Acotado a 24h: solo datos calientes (rápido, sin escanear toda la historia).
+    // Sin WHERE de fecha: el índice (sonda_id, sitio_nombre, fecha_registro DESC) hace el
+    // DISTINCT ON directo (toma la última fila por grupo) sin escanear toda la tabla. El
+    // WHERE por fecha impedía que el planner usara el índice y se cortaba a los 15s.
     const rows = await query<{ sonda_id: string; sitio_nombre: string; estado_acceso: string }>(
       `SELECT DISTINCT ON (sonda_id, sitio_nombre) sonda_id, sitio_nombre, estado_acceso
        FROM resultados_detallados_web
-       WHERE fecha_registro >= NOW() - INTERVAL '24 hours'
        ORDER BY sonda_id, sitio_nombre, fecha_registro DESC`
     );
     for (const r of rows) {
@@ -319,6 +320,8 @@ export async function getVelocidadBuckets(
        ORDER BY 1`,
       params,
     );
+    console.log(`[velbuckets] horas=${horas} buckets=${rows.length}` +
+      (rows.length ? ` primer=${rows[0].bucket} ultimo=${rows[rows.length - 1].bucket}` : ""));
     return rows.map((r) => ({
       ts: (r.bucket instanceof Date ? r.bucket : new Date(r.bucket as unknown as string)).getTime(),
       descarga: Number(r.descarga ?? 0),
