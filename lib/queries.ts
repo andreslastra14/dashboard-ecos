@@ -83,15 +83,21 @@ function rowToDispositivo(r: MasterRow, webChecks: Map<string, Record<string, st
 }
 
 async function getLatestWebChecks(): Promise<Map<string, Record<string, string>>> {
-  const rows = await query<{ sonda_id: string; sitio_nombre: string; estado_acceso: string }>(
-    `SELECT DISTINCT ON (sonda_id, sitio_nombre) sonda_id, sitio_nombre, estado_acceso
-     FROM resultados_detallados_web
-     ORDER BY sonda_id, sitio_nombre, fecha_registro DESC`
-  );
   const map = new Map<string, Record<string, string>>();
-  for (const r of rows) {
-    if (!map.has(r.sonda_id)) map.set(r.sonda_id, {});
-    map.get(r.sonda_id)![r.sitio_nombre] = r.estado_acceso;
+  try {
+    // Acotado a 24h: solo datos calientes (rápido, sin escanear toda la historia).
+    const rows = await query<{ sonda_id: string; sitio_nombre: string; estado_acceso: string }>(
+      `SELECT DISTINCT ON (sonda_id, sitio_nombre) sonda_id, sitio_nombre, estado_acceso
+       FROM resultados_detallados_web
+       WHERE fecha_registro >= NOW() - INTERVAL '24 hours'
+       ORDER BY sonda_id, sitio_nombre, fecha_registro DESC`
+    );
+    for (const r of rows) {
+      if (!map.has(r.sonda_id)) map.set(r.sonda_id, {});
+      map.get(r.sonda_id)![r.sitio_nombre] = r.estado_acceso;
+    }
+  } catch (err) {
+    console.error("getLatestWebChecks failed (se ignora):", err);
   }
   return map;
 }
@@ -173,12 +179,15 @@ export async function getDispositivos(): Promise<Dispositivo[]> {
   } catch (err) {
     console.error("getDispositivos (escuelas) failed, fallback a master:", err);
   }
-  // Fallback: telemetría cruda de registros_ecos_master (DISTINCT ON, más lento).
+  // Fallback: telemetría cruda de registros_ecos_master. ACOTADO a 24h: el DISTINCT ON
+  // sin filtro de fecha escaneaba TODA la historia (lento, se colgaba); con la ventana
+  // reciente solo toca datos calientes (~ms) y captura toda sonda que reportó en 24h.
   try {
     const rows = await query<MasterRow>(
       `SELECT DISTINCT ON (sonda_id) ${MASTER_COLS}
        FROM registros_ecos_master
        WHERE sonda_id IS NOT NULL
+         AND fecha_registro >= NOW() - INTERVAL '24 hours'
        ORDER BY sonda_id, fecha_registro DESC`
     );
     const webChecks = await getLatestWebChecks();
@@ -232,12 +241,13 @@ export async function getEscuelas(): Promise<Record<string, Escuela>> {
     console.error("getEscuelas (tabla) failed, fallback:", err);
   }
 
-  // Fallback: sintetizar desde la telemetría (comportamiento anterior).
+  // Fallback: sintetizar desde la telemetría, acotado a 24h (datos calientes, rápido).
   try {
     const rows = await query<{ sonda_id: string; latitud: number | null; longitud: number | null }>(
       `SELECT DISTINCT ON (sonda_id) sonda_id, latitud, longitud
        FROM registros_ecos_master
        WHERE sonda_id IS NOT NULL
+         AND fecha_registro >= NOW() - INTERVAL '24 hours'
        ORDER BY sonda_id, fecha_registro DESC`
     );
     const map: Record<string, Escuela> = {};
