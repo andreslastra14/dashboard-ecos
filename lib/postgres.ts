@@ -61,11 +61,13 @@ async function createPool(): Promise<Pool> {
       // 3 en paralelo (el otro espera ~500ms). Con N lambdas concurrentes
       // el total de conexiones sigue acotado (N × 3, típicamente 10-15
       // bajo carga normal de monitoreo).
-      max: 3,
+      // Pool acotado: max alto saturaba Cloud SQL con queries lentas concurrentes.
+      max: 4,
       idleTimeoutMillis: 30_000,
-      // 8s: si la BD no responde, fallar rápido para que las páginas degraden
-      // (los try/catch devuelven []/null) en vez de colgarse y dar sensación de caída.
-      connectionTimeoutMillis: 8_000,
+      connectionTimeoutMillis: 10_000,
+      // CLAVE: corta cualquier query que se cuelgue a los 15s. Sin esto, una query
+      // lenta corría hasta el límite de la función (300s) -> 504 y home caída.
+      statement_timeout: 15_000,
     });
   }
 
@@ -83,9 +85,10 @@ async function createPool(): Promise<Pool> {
     user: process.env.DB_USER,
     password: process.env.DB_PASS,
     ssl: { rejectUnauthorized: false },
-    max: 3,
+    max: 4,
     idleTimeoutMillis: 30_000,
-    connectionTimeoutMillis: 8_000,
+    connectionTimeoutMillis: 10_000,
+    statement_timeout: 15_000,
   });
 }
 
