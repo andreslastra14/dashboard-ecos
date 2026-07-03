@@ -111,7 +111,9 @@ async function getEscuelasCols(): Promise<Set<string>> {
       `SELECT column_name FROM information_schema.columns WHERE table_name = 'escuelas'`,
     );
     escuelasColsCache = new Set(rows.map((r) => r.column_name.toLowerCase()));
-  } catch {
+    console.log("[escuelas] columnas detectadas:", [...escuelasColsCache].sort().join(", "));
+  } catch (err) {
+    console.error("getEscuelasCols failed:", err);
     escuelasColsCache = new Set();
   }
   return escuelasColsCache;
