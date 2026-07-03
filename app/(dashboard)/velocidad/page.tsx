@@ -2,7 +2,7 @@ import { getDispositivos, getEscuelas, getRegistrosRecientes, getVelocidadBucket
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SpeedChartCard, type SpeedPoint } from "@/components/SpeedChartCard";
 
-export const revalidate = 60;
+export const revalidate = 30;
 
 interface PageProps {
   searchParams: Promise<{ sonda?: string }>;

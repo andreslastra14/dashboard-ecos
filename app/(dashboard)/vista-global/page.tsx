@@ -27,7 +27,7 @@ import {
   SecurityServices as ShieldCheck,
 } from "@carbon/icons-react";
 
-export const revalidate = 60;
+export const revalidate = 30;
 
 const CARD = "rounded-xl border bg-white p-4 shadow-sm";
 const CARD_STYLE = { borderColor: "#e2e8f0" };

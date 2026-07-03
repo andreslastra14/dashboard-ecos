@@ -10,7 +10,7 @@ import {
   Chip as MemoryStick,
 } from "@carbon/icons-react";
 
-export const revalidate = 60;
+export const revalidate = 30;
 
 interface PageProps {
   searchParams: Promise<{ sonda?: string }>;

@@ -10,13 +10,14 @@ import { ReportModal } from "./ReportModal";
 import { Printer } from "@carbon/icons-react";
 
 function LiveDate() {
-  const [date, setDate] = useState("");
-  useEffect(() => {
-    setDate(new Date().toLocaleDateString("es-SV", { day: "2-digit", month: "short", year: "numeric", timeZone: "America/El_Salvador" }));
-  }, []);
+  const date = useMemo(
+    () => new Date().toLocaleDateString("es-SV", { day: "2-digit", month: "short", year: "numeric", timeZone: "America/El_Salvador" }),
+    [],
+  );
+
   return (
     <div className="text-xs px-2 py-1 rounded font-mono hidden sm:block" style={{ backgroundColor: "#1e3a5f", color: "#93c5fd" }}>
-      {date || "\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0"}
+      {date}
     </div>
   );
 }
@@ -242,14 +243,34 @@ export function Header({ userName, canGenerateReport, userZona, devices = [], so
   const pathname = usePathname();
   const [reportOpen, setReportOpen] = useState(false);
   const [spinning, setSpinning] = useState(false);
+  const refreshingRef = useRef(false);
 
   const isDashboardSla = pathname === "/";
 
-  const handleRefresh = useCallback(() => {
-    setSpinning(true);
+  const refreshDashboard = useCallback((showSpinner = false) => {
+    if (refreshingRef.current) return;
+    refreshingRef.current = true;
+    if (showSpinner) setSpinning(true);
     router.refresh();
-    setTimeout(() => setSpinning(false), 1000);
+    window.setTimeout(() => {
+      refreshingRef.current = false;
+      if (showSpinner) setSpinning(false);
+    }, 1000);
   }, [router]);
+
+  const handleRefresh = useCallback(() => {
+    refreshDashboard(true);
+  }, [refreshDashboard]);
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      if (document.visibilityState === "visible") {
+        refreshDashboard();
+      }
+    }, 30_000);
+
+    return () => window.clearInterval(interval);
+  }, [refreshDashboard]);
 
   const handleReportClick = useCallback(() => {
     if (isDashboardSla) {

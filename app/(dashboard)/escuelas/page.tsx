@@ -6,7 +6,7 @@ import { ZoneFilter } from "@/components/ZoneFilter";
 import { clasificarPorDepartamento, getDepartamento, DEPARTAMENTOS } from "@/lib/geo";
 import { Suspense } from "react";
 
-export const revalidate = 60;
+export const revalidate = 30;
 
 export default async function EscuelasPage({
   searchParams,
