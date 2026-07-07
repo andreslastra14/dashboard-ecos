@@ -2,11 +2,19 @@ import {
   getDispositivos,
   getEscuelas,
   getRegistrosRecientes,
+  getVelocidadBuckets,
   calcularUptimePorDispositivo,
   calcularCalidadRed,
 } from "@/lib/queries";
+import {
+  filterDispositivos,
+  filterRegistrosByDevices,
+  hasDashboardFilters,
+  selectedDeviceIdSet,
+  type DashboardFilterParams,
+} from "@/lib/dashboard-filters";
 import { getCasoStats } from "@/lib/tickets";
-import type { Dispositivo, Escuela } from "@/lib/firebase";
+import type { Escuela } from "@/lib/firebase";
 import type { MapMarker } from "@/components/SchoolMap";
 import type { InsightsData } from "@/components/InsightsPanel";
 import type { UptimeData } from "@/components/UptimeChart";
@@ -26,7 +34,7 @@ import {
   SecurityServices as ShieldCheck,
 } from "@carbon/icons-react";
 
-export const revalidate = 60;
+export const revalidate = 30;
 
 const CARD = "rounded-xl border bg-white p-4 shadow-sm";
 const CARD_STYLE = { borderColor: "#e2e8f0" };
@@ -44,11 +52,11 @@ function parseTemp(temp: string): number {
 }
 
 interface PageProps {
-  searchParams: Promise<{ sonda?: string }>;
+  searchParams: Promise<DashboardFilterParams>;
 }
 
 export default async function Home({ searchParams }: PageProps) {
-  const { sonda: sondaParam } = await searchParams;
+  const filters = await searchParams;
   const [dispositivos, escuelas, registros, casoStats] = await Promise.all([
     getDispositivos(),
     getEscuelas(),
@@ -56,16 +64,18 @@ export default async function Home({ searchParams }: PageProps) {
     getCasoStats(),
   ]);
 
-  const filteredDispositivos = sondaParam
-    ? dispositivos.filter((d) => {
-        const cleanId = (d.cpu_id || d.id).replace(/"/g, "").trim();
-        return cleanId === sondaParam || d.cpu_id === sondaParam;
-      })
-    : dispositivos;
-
-  const filteredRegistros = sondaParam
-    ? registros.filter((r) => r.cpu_id === sondaParam)
-    : registros;
+  const activeFilters = hasDashboardFilters(filters);
+  const filteredDispositivos = filterDispositivos(dispositivos, escuelas, filters);
+  const filteredIds = selectedDeviceIdSet(filteredDispositivos);
+  const filteredRegistros = filterRegistrosByDevices(registros, filteredIds, activeFilters);
+  // Serie de velocidad de las últimas 12h agregada en SQL a buckets de 5 min (~145 puntos).
+  // Cuando hay filtros, se agrega solo sobre los dispositivos filtrados.
+  const speedBuckets = await getVelocidadBuckets(
+    12,
+    filters.sonda,
+    5,
+    activeFilters ? Array.from(filteredIds) : undefined,
+  );
 
   // ── KPI calculations ─────────────────────────────────────
   const totalDispositivos = filteredDispositivos.length;
@@ -186,22 +196,10 @@ export default async function Home({ searchParams }: PageProps) {
       };
     });
 
-  // ── Speed chart from registros recientes (ultimas 12h) ─────
-  const speedData: SpeedPoint[] = [...filteredRegistros]
-    .reverse()
-    .map((r) => {
-      const ts = r.timestamp;
-      let tsNum = 0;
-      if (ts && typeof ts === "object" && "toDate" in ts) {
-        tsNum = (ts as { toDate: () => Date }).toDate().getTime();
-      }
-      return {
-        ts: tsNum,
-        descarga: r.eth_download_mbps || r.download_mbps,
-        subida: r.wifi_download_mbps,
-      };
-    })
-    .filter((p) => p.ts > 0);
+  // ── Speed chart: buckets de 5 min de las últimas 12h (agregados en SQL) ─────
+  // getVelocidadBuckets ya devuelve la forma SpeedPoint ({ ts, descarga, subida })
+  // cubriendo las 12h completas; el filtro por sonda se aplicó en la consulta.
+  const speedData: SpeedPoint[] = speedBuckets;
 
   // ── System health summary ─────────────────────────────────
   const onlineForHealth = filteredDispositivos.filter((d) => d.online);
@@ -231,12 +229,9 @@ export default async function Home({ searchParams }: PageProps) {
   const sondasEnRiesgo = filteredDispositivos.filter(
     (d) => d.download_mbps < 5 || !d.online
   ).length;
+  // Problema de UPS = la escuela está corriendo con batería (corte de luz).
   const upsProblemas = filteredDispositivos.filter(
-    (d) =>
-      d.ups_status &&
-      d.ups_status !== "normal" &&
-      d.ups_status !== "Online" &&
-      d.ups_conectada
+    (d) => d.ups_modo === "BATERIA"
   ).length;
 
   const uptimeStats = calcularUptimePorDispositivo(filteredRegistros);

@@ -55,6 +55,7 @@ export interface Escuela {
   direccion: string;
   latitud_fija: number;
   longitud_fija: number;
+  departamento?: string;
   conectividad: string;
   cod_ce: string;
 }
