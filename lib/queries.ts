@@ -4,6 +4,12 @@ import type { Dispositivo, Escuela, RegistroHistorico } from "./firebase";
 // Consider a sonda "online" if it reported within the last 5 minutes
 const ONLINE_WINDOW_MS = 5 * 60 * 1000;
 
+// Ventana para "último estado por sonda". Sin índice (sonda_id, fecha_registro),
+// el DISTINCT ON sobre TODO el histórico particionado tarda minutos y el lambda
+// muere por timeout (dashboard en 0). Acotado a 48h el sort es de ~300k filas.
+// Trade-off: una sonda sin reportar >48h deja de listarse hasta que vuelva.
+const ESTADO_WINDOW = "48 hours";
+
 type MasterRow = {
   sonda_id: string;
   codigo_mined: string | null;
@@ -83,15 +89,24 @@ function rowToDispositivo(r: MasterRow, webChecks: Map<string, Record<string, st
 }
 
 async function getLatestWebChecks(): Promise<Map<string, Record<string, string>>> {
-  const rows = await query<{ sonda_id: string; sitio_nombre: string; estado_acceso: string }>(
-    `SELECT DISTINCT ON (sonda_id, sitio_nombre) sonda_id, sitio_nombre, estado_acceso
-     FROM resultados_detallados_web
-     ORDER BY sonda_id, sitio_nombre, fecha_registro DESC`
-  );
   const map = new Map<string, Record<string, string>>();
-  for (const r of rows) {
-    if (!map.has(r.sonda_id)) map.set(r.sonda_id, {});
-    map.get(r.sonda_id)![r.sitio_nombre] = r.estado_acceso;
+  try {
+    // resultados_detallados_web tiene ~99M filas y el DISTINCT ON global tarda 30s+.
+    // Acotar por id (PK indexado) al último tramo (~200k ids ≈ pocas horas de datos)
+    // deja la query en <1s. Filtrar por fecha NO sirve: no hay índice que lo cubra.
+    const rows = await query<{ sonda_id: string; sitio_nombre: string; estado_acceso: string }>(
+      `SELECT DISTINCT ON (sonda_id, sitio_nombre) sonda_id, sitio_nombre, estado_acceso
+       FROM resultados_detallados_web
+       WHERE id >= (SELECT COALESCE(MAX(id), 0) - 200000 FROM resultados_detallados_web)
+       ORDER BY sonda_id, sitio_nombre, fecha_registro DESC`
+    );
+    for (const r of rows) {
+      if (!map.has(r.sonda_id)) map.set(r.sonda_id, {});
+      map.get(r.sonda_id)![r.sitio_nombre] = r.estado_acceso;
+    }
+  } catch (err) {
+    // Degradar sin web checks reales en vez de tumbar getDispositivos completo.
+    console.error("getLatestWebChecks failed:", err);
   }
   return map;
 }
@@ -99,13 +114,16 @@ async function getLatestWebChecks(): Promise<Map<string, Record<string, string>>
 // Latest state per sonda from registros_ecos_master
 export async function getDispositivos(): Promise<Dispositivo[]> {
   try {
-    const rows = await query<MasterRow>(
-      `SELECT DISTINCT ON (sonda_id) ${MASTER_COLS}
-       FROM registros_ecos_master
-       WHERE sonda_id IS NOT NULL
-       ORDER BY sonda_id, fecha_registro DESC`
-    );
-    const webChecks = await getLatestWebChecks();
+    const [rows, webChecks] = await Promise.all([
+      query<MasterRow>(
+        `SELECT DISTINCT ON (sonda_id) ${MASTER_COLS}
+         FROM registros_ecos_master
+         WHERE sonda_id IS NOT NULL
+           AND fecha_registro >= NOW() - INTERVAL '${ESTADO_WINDOW}'
+         ORDER BY sonda_id, fecha_registro DESC`
+      ),
+      getLatestWebChecks(),
+    ]);
     return rows.map((r) => rowToDispositivo(r, webChecks));
   } catch (err) {
     console.error("getDispositivos failed:", err);
@@ -122,6 +140,7 @@ export async function getEscuelas(): Promise<Record<string, Escuela>> {
       `SELECT DISTINCT ON (sonda_id) sonda_id, latitud, longitud
        FROM registros_ecos_master
        WHERE sonda_id IS NOT NULL
+         AND fecha_registro >= NOW() - INTERVAL '${ESTADO_WINDOW}'
        ORDER BY sonda_id, fecha_registro DESC`
     );
     const map: Record<string, Escuela> = {};
