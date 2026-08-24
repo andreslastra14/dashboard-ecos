@@ -39,15 +39,39 @@ async function createPool(): Promise<Pool> {
 
     const connector = new Connector({ auth });
 
+    // Si hay DB_PASS, autenticar a Postgres como usuario/contraseña (postgres) vía el
+    // Cloud SQL Connector — igual que la app de Salva. Ese usuario SÍ tiene permiso sobre
+    // la tabla `escuelas` (estado materializado) => datos completos y rápido. Si no hay
+    // DB_PASS, usar IAM (token del service account) como antes.
+    const usePassword = !!process.env.DB_PASS;
+
     const clientOpts = await connector.getOptions({
       instanceConnectionName: process.env.INSTANCE_CONNECTION_NAME!,
       ipType: IpAddressTypes.PUBLIC,
-      authType: AuthTypes.IAM,
+      authType: usePassword ? AuthTypes.PASSWORD : AuthTypes.IAM,
     });
 
-    return new Pool({
+    // Pool acotado: max alto saturaba Cloud SQL con queries lentas concurrentes.
+    // statement_timeout=15s corta cualquier query colgada (evita el 504 a los 300s).
+    const common = {
       ...clientOpts,
       database: process.env.DB_NAME,
+      max: 4,
+      idleTimeoutMillis: 30_000,
+      connectionTimeoutMillis: 10_000,
+      statement_timeout: 15_000,
+    };
+
+    if (usePassword) {
+      return new Pool({
+        ...common,
+        user: process.env.DB_USER_SQL || "postgres",
+        password: process.env.DB_PASS,
+      });
+    }
+
+    return new Pool({
+      ...common,
       user: process.env.DB_USER,
       password: async () => {
         const client = await auth.getClient();
@@ -56,16 +80,6 @@ async function createPool(): Promise<Pool> {
         if (!t) throw new Error("Failed to obtain IAM access token");
         return t;
       },
-      // Serverless en Vercel: cada lambda corre con su propio pool.
-      // max=3 permite que las 4 queries del Promise.all del home corran
-      // 3 en paralelo (el otro espera ~500ms). Con N lambdas concurrentes
-      // el total de conexiones sigue acotado (N × 3, típicamente 10-15
-      // bajo carga normal de monitoreo).
-      max: 3,
-      idleTimeoutMillis: 30_000,
-      // 8s: si la BD no responde, fallar rápido para que las páginas degraden
-      // (los try/catch devuelven []/null) en vez de colgarse y dar sensación de caída.
-      connectionTimeoutMillis: 8_000,
     });
   }
 
@@ -83,9 +97,10 @@ async function createPool(): Promise<Pool> {
     user: process.env.DB_USER,
     password: process.env.DB_PASS,
     ssl: { rejectUnauthorized: false },
-    max: 3,
+    max: 4,
     idleTimeoutMillis: 30_000,
-    connectionTimeoutMillis: 8_000,
+    connectionTimeoutMillis: 10_000,
+    statement_timeout: 15_000,
   });
 }
 

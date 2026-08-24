@@ -1,15 +1,23 @@
-import { getDispositivos, getEscuelas, getRegistrosRecientes } from "@/lib/queries";
+import { getDispositivos, getEscuelas, getRegistrosRecientes, getVelocidadBuckets } from "@/lib/queries";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SpeedChartCard, type SpeedPoint } from "@/components/SpeedChartCard";
+import {
+  filterDispositivos,
+  filterRegistrosByDevices,
+  filterTitle,
+  hasDashboardFilters,
+  selectedDeviceIdSet,
+  type DashboardFilterParams,
+} from "@/lib/dashboard-filters";
 
-export const revalidate = 60;
+export const revalidate = 30;
 
 interface PageProps {
-  searchParams: Promise<{ sonda?: string }>;
+  searchParams: Promise<DashboardFilterParams>;
 }
 
 export default async function VelocidadPage({ searchParams }: PageProps) {
-  const { sonda: sondaParam } = await searchParams;
+  const filters = await searchParams;
 
   const [dispositivos, escuelas, registros] = await Promise.all([
     getDispositivos(),
@@ -17,8 +25,20 @@ export default async function VelocidadPage({ searchParams }: PageProps) {
     getRegistrosRecientes(3000, 12),
   ]);
 
+  const activeFilters = hasDashboardFilters(filters);
+  const filteredDispositivos = filterDispositivos(dispositivos, escuelas, filters);
+  const filteredIds = selectedDeviceIdSet(filteredDispositivos);
+  const filteredRegistros = filterRegistrosByDevices(registros, filteredIds, activeFilters);
+  // Datos del chart agregados en SQL (no se truncan con el LIMIT como las filas crudas).
+  const speedBuckets = await getVelocidadBuckets(
+    12,
+    filters.sonda,
+    5,
+    activeFilters ? Array.from(filteredIds) : undefined,
+  );
+
   // Build device list
-  const deviceList = dispositivos.map((d) => {
+  const deviceList = filteredDispositivos.map((d) => {
     const cleanId = (d.cpu_id || d.id).replace(/"/g, "").trim();
     const esc = escuelas[cleanId] ?? escuelas[d.cpu_id] ?? escuelas[d.id];
     return {
@@ -31,29 +51,9 @@ export default async function VelocidadPage({ searchParams }: PageProps) {
     };
   });
 
-  // Filter by sonda param or show all
-  const filteredDevices = sondaParam
-    ? deviceList.filter((d) => d.cpuId === sondaParam)
-    : deviceList;
-
-  const filteredRegistros = sondaParam
-    ? registros.filter((r) => r.cpu_id === sondaParam)
-    : registros;
-
-  const speedData: SpeedPoint[] = [...filteredRegistros]
-    .reverse()
-    .map((r) => {
-      let tsNum = 0;
-      if (r.timestamp && typeof r.timestamp === "object" && "toDate" in r.timestamp) {
-        tsNum = (r.timestamp as { toDate: () => Date }).toDate().getTime();
-      }
-      return {
-        ts: tsNum,
-        descarga: r.eth_download_mbps || r.download_mbps,
-        subida: r.wifi_download_mbps,
-      };
-    })
-    .filter((p) => p.ts > 0);
+  // El chart usa los buckets agregados en SQL (completos para todo el rango,
+  // aunque haya miles de sondas). descarga = Ethernet, subida = WiFi.
+  const speedData: SpeedPoint[] = speedBuckets.filter((p) => p.ts > 0);
 
   const conVelocidad = filteredRegistros.filter((r) => r.download_mbps > 0);
   const downs = conVelocidad.map((r) => r.download_mbps);
@@ -63,7 +63,7 @@ export default async function VelocidadPage({ searchParams }: PageProps) {
 
   // Per-device speed summary table
   const deviceSpeedMap = new Map<string, { total: number; sum: number; max: number; records: number }>();
-  for (const r of registros) {
+  for (const r of filteredRegistros) {
     const entry = deviceSpeedMap.get(r.cpu_id) ?? { total: 0, sum: 0, max: 0, records: 0 };
     entry.records++;
     if (r.download_mbps > 0) {
@@ -74,8 +74,8 @@ export default async function VelocidadPage({ searchParams }: PageProps) {
     deviceSpeedMap.set(r.cpu_id, entry);
   }
 
-  const titulo = sondaParam
-    ? `Velocidad — ${filteredDevices[0]?.label || sondaParam}`
+  const titulo = activeFilters
+    ? `Velocidad — ${filterTitle(filters) || "selección"}`
     : "Velocidad — Todas las Sondas";
 
   return (
@@ -83,7 +83,7 @@ export default async function VelocidadPage({ searchParams }: PageProps) {
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Historial de Velocidad</h1>
         <p className="text-sm text-gray-500 mt-1">
-          {sondaParam ? `Metricas de ${filteredDevices[0]?.label || sondaParam}` : "Metricas de descarga por dispositivo — usa el filtro del sidebar para ver una sonda especifica"}
+          {activeFilters ? `Metricas de ${filterTitle(filters) || "la selección actual"}` : "Metricas de descarga por dispositivo — usa el buscador superior para filtrar"}
         </p>
       </div>
 
@@ -112,7 +112,7 @@ export default async function VelocidadPage({ searchParams }: PageProps) {
             <div className="text-center py-12">
               <p className="text-sm text-gray-400">Sin mediciones de velocidad disponibles</p>
               <p className="text-xs text-gray-300 mt-1">
-                {sondaParam ? "Este dispositivo no tiene registros de velocidad o reporta 0 Mbps" : "No hay registros con velocidad > 0"}
+                {activeFilters ? "La selección no tiene registros de velocidad o reporta 0 Mbps" : "No hay registros con velocidad > 0"}
               </p>
             </div>
           )}
@@ -120,7 +120,7 @@ export default async function VelocidadPage({ searchParams }: PageProps) {
       </Card>
 
       {/* Per-device speed summary (when viewing all) */}
-      {!sondaParam && (
+      {!filters.sonda && (
         <Card className="rounded-2xl shadow-sm">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-semibold text-gray-700">Resumen por Dispositivo</CardTitle>
@@ -176,7 +176,7 @@ export default async function VelocidadPage({ searchParams }: PageProps) {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 text-left text-xs text-gray-500 uppercase tracking-wide">
-                  {!sondaParam && <th className="px-4 py-3">Dispositivo</th>}
+                  {!filters.sonda && <th className="px-4 py-3">Dispositivo</th>}
                   <th className="px-4 py-3">Fecha</th>
                   <th className="px-4 py-3">Ethernet (Mbps)</th>
                   <th className="px-4 py-3">WiFi (Mbps)</th>
@@ -200,7 +200,7 @@ export default async function VelocidadPage({ searchParams }: PageProps) {
                   const dev = deviceList.find((d) => d.cpuId === r.cpu_id);
                   return (
                     <tr key={r.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
-                      {!sondaParam && <td className="px-4 py-2.5 text-gray-600 text-xs">{dev?.label || r.cpu_id}</td>}
+                      {!filters.sonda && <td className="px-4 py-2.5 text-gray-600 text-xs">{dev?.label || r.cpu_id}</td>}
                       <td className="px-4 py-2.5 text-gray-600">{fecha}</td>
                       <td className="px-4 py-2.5 font-medium">{r.eth_download_mbps > 0 ? r.eth_download_mbps.toFixed(1) : "—"}</td>
                       <td className="px-4 py-2.5 font-medium">{r.wifi_download_mbps > 0 ? r.wifi_download_mbps.toFixed(1) : "—"}</td>
@@ -215,7 +215,7 @@ export default async function VelocidadPage({ searchParams }: PageProps) {
                 })}
                 {filteredRegistros.length === 0 && (
                   <tr>
-                    <td colSpan={sondaParam ? 4 : 5} className="px-4 py-8 text-center text-gray-400">Sin registros</td>
+                    <td colSpan={filters.sonda ? 4 : 5} className="px-4 py-8 text-center text-gray-400">Sin registros</td>
                   </tr>
                 )}
               </tbody>

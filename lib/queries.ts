@@ -4,12 +4,6 @@ import type { Dispositivo, Escuela, RegistroHistorico } from "./firebase";
 // Consider a sonda "online" if it reported within the last 5 minutes
 const ONLINE_WINDOW_MS = 5 * 60 * 1000;
 
-// Ventana para "último estado por sonda". Sin índice (sonda_id, fecha_registro),
-// el DISTINCT ON sobre TODO el histórico particionado tarda minutos y el lambda
-// muere por timeout (dashboard en 0). Acotado a 48h el sort es de ~300k filas.
-// Trade-off: una sonda sin reportar >48h deja de listarse hasta que vuelva.
-const ESTADO_WINDOW = "48 hours";
-
 type MasterRow = {
   sonda_id: string;
   codigo_mined: string | null;
@@ -35,6 +29,18 @@ const MASTER_COLS =
   "latitud, longitud, gps_status, ups_estado, ups_nivel, cpu_temp, " +
   "cpu_uso, ram_uso, eth_latencia, wifi_latencia, fecha_registro";
 
+// Traduce el código NUT de la UPS a una etiqueta legible en español.
+function upsEstadoLabel(estado: string | null): string {
+  const raw = (estado ?? "").trim();
+  const code = raw.toUpperCase();
+  if (code.startsWith("OB")) return "En batería";
+  if (code.startsWith("OL")) return "En línea";
+  if (raw === "Driver not connected") return "Sin comunicación";
+  if (raw === "Data stale") return "Datos desactualizados";
+  if (raw === "") return "Sin datos";
+  return raw;
+}
+
 function rowToDispositivo(r: MasterRow, webChecks: Map<string, Record<string, string>>): Dispositivo {
   const now = Date.now();
   const ts = r.fecha_registro.getTime();
@@ -54,6 +60,13 @@ function rowToDispositivo(r: MasterRow, webChecks: Map<string, Record<string, st
 
   const eth = Number(r.eth_download ?? 0);
   const wifi = Number(r.wifi_download ?? 0);
+
+  // UPS: la sonda reporta códigos NUT estándar (no "CON_LUZ"). OL* = en línea (con corriente),
+  // OB* = en batería (corte de luz). "Driver not connected"/null = la UPS no responde.
+  const upsCode = (r.ups_estado ?? "").trim().toUpperCase();
+  const upsEnLinea = upsCode.startsWith("OL");
+  const upsEnBateria = upsCode.startsWith("OB");
+
   return {
     id: r.sonda_id,
     cpu_id: r.sonda_id,
@@ -78,10 +91,10 @@ function rowToDispositivo(r: MasterRow, webChecks: Map<string, Record<string, st
     web_check_streaming: checks.Netflix ?? checks.STREAMING ?? (online ? "ACCESIBLE" : "SIN_CONEXION"),
     web_check_adultos: checks.Adultos ?? checks.ADULTOS ?? (online ? "BLOQUEADO" : "SIN_CONEXION"),
     web_check_apuestas: checks.Apuestas ?? checks.APUESTAS ?? (online ? "BLOQUEADO" : "SIN_CONEXION"),
-    ups_status: r.ups_estado ?? "NORMAL",
+    ups_status: upsEstadoLabel(r.ups_estado),
     ups_nivel: Number(r.ups_nivel ?? 0),
-    ups_conectada: r.ups_estado === "CON_LUZ",
-    ups_modo: r.ups_estado === "CON_BAT" ? "BATERIA" : "LINEA",
+    ups_conectada: upsEnLinea,
+    ups_modo: upsEnBateria ? "BATERIA" : "LINEA",
     link_rpi_connect: "",
     alerta_enviada: false,
     ticket_activo: !online,
@@ -91,9 +104,10 @@ function rowToDispositivo(r: MasterRow, webChecks: Map<string, Record<string, st
 async function getLatestWebChecks(): Promise<Map<string, Record<string, string>>> {
   const map = new Map<string, Record<string, string>>();
   try {
-    // resultados_detallados_web tiene ~99M filas y el DISTINCT ON global tarda 30s+.
-    // Acotar por id (PK indexado) al último tramo (~200k ids ≈ pocas horas de datos)
-    // deja la query en <1s. Filtrar por fecha NO sirve: no hay índice que lo cubra.
+    // Con ~99M filas (ago-2026) ni el índice (sonda_id, sitio_nombre, fecha DESC) salva el
+    // DISTINCT ON global: se corta a los 15s de statement_timeout. Acotar por id (PK indexado)
+    // al último tramo (~200k ids ≈ pocas horas de datos) lo deja en <1s. Filtrar por fecha
+    // tampoco sirve: impide usar el índice y obliga a escanear toda la tabla.
     const rows = await query<{ sonda_id: string; sitio_nombre: string; estado_acceso: string }>(
       `SELECT DISTINCT ON (sonda_id, sitio_nombre) sonda_id, sitio_nombre, estado_acceso
        FROM resultados_detallados_web
@@ -105,21 +119,44 @@ async function getLatestWebChecks(): Promise<Map<string, Record<string, string>>
       map.get(r.sonda_id)![r.sitio_nombre] = r.estado_acceso;
     }
   } catch (err) {
-    // Degradar sin web checks reales en vez de tumbar getDispositivos completo.
-    console.error("getLatestWebChecks failed:", err);
+    console.error("getLatestWebChecks failed (se ignora):", err);
   }
   return map;
 }
 
-// Latest state per sonda from registros_ecos_master
+// Columnas reales de la tabla `escuelas` (cacheado en memoria del módulo).
+let escuelasColsCache: Set<string> | null = null;
+async function getEscuelasCols(): Promise<Set<string>> {
+  if (escuelasColsCache) return escuelasColsCache;
+  try {
+    const rows = await query<{ column_name: string }>(
+      `SELECT column_name FROM information_schema.columns WHERE table_name = 'escuelas'`,
+    );
+    escuelasColsCache = new Set(rows.map((r) => r.column_name.toLowerCase()));
+  } catch (err) {
+    console.error("getEscuelasCols failed:", err);
+    escuelasColsCache = new Set();
+  }
+  return escuelasColsCache;
+}
+
+// Estado por sonda desde la TELEMETRÍA (registros_ecos_master): es la única fuente del
+// estado real (online/velocidad). La tabla `escuelas` solo tiene inventario (nombre/coords),
+// que se resuelve aparte en getEscuelas.
 export async function getDispositivos(): Promise<Dispositivo[]> {
   try {
+    // La CTE recursiva (loose index scan) dependía de idx_master_sonda_fecha
+    // (sonda_id, fecha DESC), que se PERDIÓ cuando la tabla se recreó como
+    // particionada (ago-2026, mismo evento que borró los GRANTs). Sin ese índice,
+    // cada seek de la CTE es un seq scan y la query no termina. Mientras no exista
+    // de nuevo, DISTINCT ON acotado a 48h (usa idx por fecha): ~2.8s con ~2.8M filas.
+    // Trade-off: una sonda sin reportar >48h deja de listarse hasta que vuelva.
     const [rows, webChecks] = await Promise.all([
       query<MasterRow>(
         `SELECT DISTINCT ON (sonda_id) ${MASTER_COLS}
          FROM registros_ecos_master
          WHERE sonda_id IS NOT NULL
-           AND fecha_registro >= NOW() - INTERVAL '${ESTADO_WINDOW}'
+           AND fecha_registro >= NOW() - INTERVAL '48 hours'
          ORDER BY sonda_id, fecha_registro DESC`
       ),
       getLatestWebChecks(),
@@ -131,39 +168,105 @@ export async function getDispositivos(): Promise<Dispositivo[]> {
   }
 }
 
-// Synthesize "escuelas" from sondas so the dashboard map works.
-// The real `escuelas` table has no coordinates; sondas do, so we build
-// a virtual inventory keyed by sonda_id using their latest report.
+// Inventario de escuelas (nombre + coords). Camino RÁPIDO: tabla `escuelas` real.
+// Fallback: sintetizar desde registros_ecos_master (más lento) si la tabla no sirve.
 export async function getEscuelas(): Promise<Record<string, Escuela>> {
+  const buildEscuela = (sonda: string, nombre: string, lat: number, lng: number, cod: string, departamento?: string): Escuela => ({
+    id: sonda,
+    nombre_escuela: nombre,
+    contacto_principal: "", tel_principal: "", email_principal: "",
+    contacto_secundario: "", tel_secundario: "", email_secundario: "",
+    direccion: "",
+    latitud_fija: lat,
+    longitud_fija: lng,
+    departamento,
+    conectividad: "Dual-link",
+    cod_ce: cod,
+  });
+
+  try {
+    const cols = await getEscuelasCols();
+    if (cols.has("sonda_id")) {
+      const want = ["sonda_id", "nombre_escuela", "codigo_mined", "departamento", "lat", "lon"];
+      const sel = want.filter((c) => cols.has(c));
+      const rows = await query<Record<string, unknown>>(
+        `SELECT ${sel.map((c) => `"${c}"`).join(", ")} FROM escuelas WHERE sonda_id IS NOT NULL`,
+      );
+      if (rows.length) {
+        const map: Record<string, Escuela> = {};
+        for (const r of rows) {
+          const sonda = String(r.sonda_id ?? "");
+          if (!sonda) continue;
+          map[sonda] = buildEscuela(
+            sonda,
+            String(r.nombre_escuela ?? sonda),
+            Number(r.lat ?? 0),
+            Number(r.lon ?? 0),
+            String(r.codigo_mined ?? sonda),
+            String(r.departamento ?? "") || undefined,
+          );
+        }
+        return map;
+      }
+    }
+  } catch (err) {
+    console.error("getEscuelas (tabla) failed, fallback:", err);
+  }
+
+  // Fallback: sintetizar desde la telemetría, acotado a 24h (datos calientes, rápido).
   try {
     const rows = await query<{ sonda_id: string; latitud: number | null; longitud: number | null }>(
       `SELECT DISTINCT ON (sonda_id) sonda_id, latitud, longitud
        FROM registros_ecos_master
        WHERE sonda_id IS NOT NULL
-         AND fecha_registro >= NOW() - INTERVAL '${ESTADO_WINDOW}'
+         AND fecha_registro >= NOW() - INTERVAL '24 hours'
        ORDER BY sonda_id, fecha_registro DESC`
     );
     const map: Record<string, Escuela> = {};
     for (const r of rows) {
-      map[r.sonda_id] = {
-        id: r.sonda_id,
-        nombre_escuela: r.sonda_id.replace(/_/g, " "),
-        contacto_principal: "",
-        tel_principal: "",
-        email_principal: "",
-        contacto_secundario: "",
-        tel_secundario: "",
-        email_secundario: "",
-        direccion: "",
-        latitud_fija: Number(r.latitud ?? 0),
-        longitud_fija: Number(r.longitud ?? 0),
-        conectividad: "Dual-link",
-        cod_ce: r.sonda_id,
-      };
+      map[r.sonda_id] = buildEscuela(
+        r.sonda_id,
+        r.sonda_id.replace(/_/g, " "),
+        Number(r.latitud ?? 0),
+        Number(r.longitud ?? 0),
+        r.sonda_id,
+      );
     }
     return map;
   } catch (err) {
     console.error("getEscuelas failed:", err);
+    return {};
+  }
+}
+
+// Coordenadas REALES de cada escuela desde la tabla `escuelas`, indexadas por
+// código MINED. El mapa ubica cada sonda por su codigo_mined contra este mapa
+// (en vez de apilar las que no tienen GPS en coordenadas "demo").
+export async function getCoordsEscuelas(): Promise<
+  Record<string, { nombre: string; lat: number; lng: number }>
+> {
+  try {
+    const rows = await query<{
+      codigo_mined: string | null;
+      nombre_escuela: string | null;
+      lat: string | number | null;
+      lon: string | number | null;
+    }>(
+      `SELECT codigo_mined, nombre_escuela, lat, lon
+       FROM escuelas
+       WHERE codigo_mined IS NOT NULL AND lat IS NOT NULL AND lon IS NOT NULL`,
+    );
+    const map: Record<string, { nombre: string; lat: number; lng: number }> = {};
+    for (const r of rows) {
+      const codigo = String(r.codigo_mined ?? "").trim();
+      const lat = Number(r.lat);
+      const lng = Number(r.lon);
+      if (!codigo || !Number.isFinite(lat) || !Number.isFinite(lng) || lat === 0 || lng === 0) continue;
+      map[codigo] = { nombre: r.nombre_escuela || codigo, lat, lng };
+    }
+    return map;
+  } catch (err) {
+    console.error("getCoordsEscuelas failed:", err);
     return {};
   }
 }
@@ -192,7 +295,7 @@ function rowToRegistro(r: MasterRow & { id: number | string }): RegistroHistoric
     web_check_streaming: online ? "ACCESIBLE" : "SIN_CONEXION",
     web_check_adultos: online ? "BLOQUEADO" : "SIN_CONEXION",
     web_check_apuestas: online ? "BLOQUEADO" : "SIN_CONEXION",
-    ups_status: r.ups_estado ?? "NORMAL",
+    ups_status: upsEstadoLabel(r.ups_estado),
     ups_nivel: Number(r.ups_nivel ?? 0),
     cpu_usage: Number(r.cpu_uso ?? 0),
     ram_usage: Number(r.ram_uso ?? 0),
@@ -213,6 +316,53 @@ export async function getRegistrosDispositivo(cpuId: string, limite = 100): Prom
     return rows.map(rowToRegistro);
   } catch (err) {
     console.error("getRegistrosDispositivo failed:", err);
+    return [];
+  }
+}
+
+// Velocidad agregada por intervalos de tiempo (buckets), promediando en SQL.
+// Escala a miles de sondas: devuelve ~1 punto por bucket (p.ej. 144 en 12h a 5 min),
+// en vez de traer filas crudas que se truncan con el LIMIT. Sin sondaId agrega TODAS
+// las sondas (promedio de red); con sondaId, solo esa sonda.
+export async function getVelocidadBuckets(
+  horas = 12,
+  sondaId?: string,
+  bucketMin = 5,
+  sondaIds?: string[],
+): Promise<{ ts: number; descarga: number; subida: number }[]> {
+  try {
+    const bucketSec = bucketMin * 60;
+    // Rango relativo al ÚLTIMO dato real (MAX fecha_registro), no al reloj del server:
+    // las sondas guardan hora local (naive) y NOW() es UTC, así que restar horas al reloj
+    // capturaba mal el rango (solo salía un tramo). Usar MAX evita ese desfase de zona horaria.
+    const params: unknown[] = [bucketSec, horas];
+    let sondaFilter = "";
+    const ids = sondaIds?.filter(Boolean);
+    if (sondaIds && !ids?.length) return [];
+    if (ids?.length) {
+      params.push(ids);
+      sondaFilter = `AND sonda_id = ANY($${params.length}::text[])`;
+    } else if (sondaId) {
+      params.push(sondaId);
+      sondaFilter = `AND sonda_id = $${params.length}`;
+    }
+    const rows = await query<{ bucket: Date; descarga: string | null; subida: string | null }>(
+      `SELECT to_timestamp(floor(extract(epoch from fecha_registro) / $1) * $1) AS bucket,
+              AVG(eth_download) FILTER (WHERE eth_download > 0) AS descarga,
+              AVG(wifi_download) FILTER (WHERE wifi_download > 0) AS subida
+       FROM registros_ecos_master
+       WHERE fecha_registro >= (SELECT MAX(fecha_registro) FROM registros_ecos_master) - ($2 * INTERVAL '1 hour') ${sondaFilter}
+       GROUP BY 1
+       ORDER BY 1`,
+      params,
+    );
+    return rows.map((r) => ({
+      ts: (r.bucket instanceof Date ? r.bucket : new Date(r.bucket as unknown as string)).getTime(),
+      descarga: Number(r.descarga ?? 0),
+      subida: Number(r.subida ?? 0),
+    }));
+  } catch (err) {
+    console.error("getVelocidadBuckets failed:", err);
     return [];
   }
 }

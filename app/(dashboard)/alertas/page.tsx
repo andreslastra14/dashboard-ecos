@@ -1,5 +1,6 @@
 import { getDispositivos, getEscuelas } from "@/lib/queries";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { filterDispositivos, type DashboardFilterParams } from "@/lib/dashboard-filters";
 import {
   SecurityServices as ShieldCheck,
   Security as ShieldOff,
@@ -10,25 +11,20 @@ import {
   Chip as MemoryStick,
 } from "@carbon/icons-react";
 
-export const revalidate = 60;
+export const revalidate = 30;
 
 interface PageProps {
-  searchParams: Promise<{ sonda?: string }>;
+  searchParams: Promise<DashboardFilterParams>;
 }
 
 export default async function AlertasPage({ searchParams }: PageProps) {
-  const { sonda: sondaParam } = await searchParams;
+  const filters = await searchParams;
   const [allDispositivos, escuelas] = await Promise.all([
     getDispositivos(),
     getEscuelas(),
   ]);
 
-  const dispositivos = sondaParam
-    ? allDispositivos.filter((d) => {
-        const cleanId = (d.cpu_id || d.id).replace(/"/g, "").trim();
-        return cleanId === sondaParam || d.cpu_id === sondaParam;
-      })
-    : allDispositivos;
+  const dispositivos = filterDispositivos(allDispositivos, escuelas, filters);
 
   // Merge device data with school names
   const devices = dispositivos.map((d) => {

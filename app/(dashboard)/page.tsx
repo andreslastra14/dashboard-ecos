@@ -1,5 +1,13 @@
-import { getDispositivos, getRegistrosRecientes } from "@/lib/queries";
+import { getDispositivos, getEscuelas, getRegistrosRecientes } from "@/lib/queries";
 import { calcularSlas } from "@/lib/sla";
+import {
+  filterDispositivos,
+  filterRegistrosByDevices,
+  filterTitle,
+  hasDashboardFilters,
+  selectedDeviceIdSet,
+  type DashboardFilterParams,
+} from "@/lib/dashboard-filters";
 import { SlaHeroCard } from "@/components/SlaHeroCard";
 import { SlaStatusCards } from "@/components/SlaStatusCards";
 import { SlaBreakdownCard } from "@/components/SlaBreakdownCard";
@@ -13,34 +21,29 @@ import {
   Radio,
 } from "@carbon/icons-react";
 
-export const revalidate = 60;
+export const revalidate = 30;
 
 const CARD_STYLE = { borderColor: "#e2e8f0" };
 const TITLE = "text-[11px] font-semibold uppercase tracking-widest mb-3";
 const TITLE_COLOR = { color: "#64748b" };
 
 interface PageProps {
-  searchParams: Promise<{ sonda?: string }>;
+  searchParams: Promise<DashboardFilterParams>;
 }
 
 export default async function DashboardPage({ searchParams }: PageProps) {
-  const { sonda: sondaParam } = await searchParams;
+  const filters = await searchParams;
 
-  const [dispositivos, registros] = await Promise.all([
+  const [dispositivos, escuelas, registros] = await Promise.all([
     getDispositivos(),
+    getEscuelas(),
     getRegistrosRecientes(3000, 12),
   ]);
 
-  const filteredDispositivos = sondaParam
-    ? dispositivos.filter((d) => {
-        const cleanId = (d.cpu_id || d.id).replace(/"/g, "").trim();
-        return cleanId === sondaParam || d.cpu_id === sondaParam;
-      })
-    : dispositivos;
-
-  const filteredRegistros = sondaParam
-    ? registros.filter((r) => r.cpu_id === sondaParam)
-    : registros;
+  const activeFilters = hasDashboardFilters(filters);
+  const filteredDispositivos = filterDispositivos(dispositivos, escuelas, filters);
+  const filteredIds = selectedDeviceIdSet(filteredDispositivos);
+  const filteredRegistros = filterRegistrosByDevices(registros, filteredIds, activeFilters);
 
   const sla = calcularSlas(filteredDispositivos, filteredRegistros);
 
@@ -48,13 +51,13 @@ export default async function DashboardPage({ searchParams }: PageProps) {
 
   return (
     <div className="flex flex-col gap-4 max-w-full">
-      {sondaParam && (
+      {activeFilters && (
         <div
           className="rounded-lg border px-3 py-2 text-xs text-slate-600 bg-amber-50"
           style={{ borderColor: "#fcd34d" }}
         >
-          Vista filtrada a la sonda <span className="font-mono font-semibold">{sondaParam}</span>.
-          Los SLAs reflejan solo ese equipo.
+          Vista filtrada: <span className="font-semibold">{filterTitle(filters) || "selección actual"}</span>.
+          Los SLAs reflejan solo esa selección.
         </div>
       )}
 
