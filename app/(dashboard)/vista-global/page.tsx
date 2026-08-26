@@ -35,6 +35,7 @@ import {
 } from "@carbon/icons-react";
 
 export const revalidate = 30;
+export const maxDuration = 60;
 
 const CARD = "rounded-xl border bg-white p-4 shadow-sm";
 const CARD_STYLE = { borderColor: "#e2e8f0" };

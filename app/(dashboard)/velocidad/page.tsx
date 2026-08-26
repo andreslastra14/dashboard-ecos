@@ -11,6 +11,7 @@ import {
 } from "@/lib/dashboard-filters";
 
 export const revalidate = 30;
+export const maxDuration = 60;
 
 interface PageProps {
   searchParams: Promise<DashboardFilterParams>;

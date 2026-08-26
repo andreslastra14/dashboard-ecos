@@ -22,6 +22,7 @@ import {
 } from "@carbon/icons-react";
 
 export const revalidate = 30;
+export const maxDuration = 60;
 
 const CARD_STYLE = { borderColor: "#e2e8f0" };
 const TITLE = "text-[11px] font-semibold uppercase tracking-widest mb-3";

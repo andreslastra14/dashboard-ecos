@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { query } from "./postgres";
 import type { Dispositivo, Escuela, RegistroHistorico } from "./firebase";
 
@@ -143,7 +144,7 @@ async function getEscuelasCols(): Promise<Set<string>> {
 // Estado por sonda desde la TELEMETRÍA (registros_ecos_master): es la única fuente del
 // estado real (online/velocidad). La tabla `escuelas` solo tiene inventario (nombre/coords),
 // que se resuelve aparte en getEscuelas.
-export async function getDispositivos(): Promise<Dispositivo[]> {
+async function getDispositivosImpl(): Promise<Dispositivo[]> {
   try {
     // La CTE recursiva (loose index scan) dependía de idx_master_sonda_fecha
     // (sonda_id, fecha DESC), que se PERDIÓ cuando la tabla se recreó como
@@ -170,7 +171,7 @@ export async function getDispositivos(): Promise<Dispositivo[]> {
 
 // Inventario de escuelas (nombre + coords). Camino RÁPIDO: tabla `escuelas` real.
 // Fallback: sintetizar desde registros_ecos_master (más lento) si la tabla no sirve.
-export async function getEscuelas(): Promise<Record<string, Escuela>> {
+async function getEscuelasImpl(): Promise<Record<string, Escuela>> {
   const buildEscuela = (sonda: string, nombre: string, lat: number, lng: number, cod: string, departamento?: string): Escuela => ({
     id: sonda,
     nombre_escuela: nombre,
@@ -242,7 +243,7 @@ export async function getEscuelas(): Promise<Record<string, Escuela>> {
 // Coordenadas REALES de cada escuela desde la tabla `escuelas`, indexadas por
 // código MINED. El mapa ubica cada sonda por su codigo_mined contra este mapa
 // (en vez de apilar las que no tienen GPS en coordenadas "demo").
-export async function getCoordsEscuelas(): Promise<
+async function getCoordsEscuelasImpl(): Promise<
   Record<string, { nombre: string; lat: number; lng: number }>
 > {
   try {
@@ -367,7 +368,7 @@ export async function getVelocidadBuckets(
   }
 }
 
-export async function getRegistrosRecientes(limite = 3000, horas = 12): Promise<RegistroHistorico[]> {
+async function getRegistrosRecientesImpl(limite = 3000, horas = 12): Promise<RegistroHistorico[]> {
   try {
     const cutoff = new Date(Date.now() - horas * 60 * 60 * 1000);
     const rows = await query<MasterRow & { id: number }>(
@@ -384,6 +385,15 @@ export async function getRegistrosRecientes(limite = 3000, horas = 12): Promise<
     return [];
   }
 }
+
+// Memoización por request (React cache): el layout y la página piden lo mismo
+// dentro del mismo render; sin esto cada llamada repite consultas de ~3s contra
+// la BD y el total pasa el límite de la función en Vercel (el stream se corta
+// y la página queda en blanco bajo el header).
+export const getDispositivos = cache(getDispositivosImpl);
+export const getEscuelas = cache(getEscuelasImpl);
+export const getCoordsEscuelas = cache(getCoordsEscuelasImpl);
+export const getRegistrosRecientes = cache(getRegistrosRecientesImpl);
 
 export async function getRegistrosPorRango(desde: Date, hasta: Date): Promise<RegistroHistorico[]> {
   try {

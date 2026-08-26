@@ -8,6 +8,7 @@ import { cleanDeviceId, filterTitle, splitParam, zonaFromDepartamento, type Dash
 import { Suspense } from "react";
 
 export const revalidate = 30;
+export const maxDuration = 60;
 
 export default async function EscuelasPage({
   searchParams,
