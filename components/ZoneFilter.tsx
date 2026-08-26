@@ -13,7 +13,7 @@ interface ZoneStats {
 export function ZoneFilter({ stats }: { stats: ZoneStats[] }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const zona = searchParams.get("zona");
+  const departamento = searchParams.get("departamento");
 
   return (
     <div className="flex items-center gap-3 flex-wrap">
@@ -22,12 +22,12 @@ export function ZoneFilter({ stats }: { stats: ZoneStats[] }) {
         Filtrar por departamento
       </div>
       <select
-        value={zona || ""}
+        value={departamento || ""}
         onChange={(e) => {
           const val = e.target.value;
           const params = new URLSearchParams(searchParams.toString());
-          if (val) params.set("zona", val);
-          else params.delete("zona");
+          if (val) params.set("departamento", val);
+          else params.delete("departamento");
           router.push(`/escuelas?${params.toString()}`);
         }}
         className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-200"
@@ -39,11 +39,11 @@ export function ZoneFilter({ stats }: { stats: ZoneStats[] }) {
           </option>
         ))}
       </select>
-      {zona && (
+      {departamento && (
         <button
           onClick={() => {
             const params = new URLSearchParams(searchParams.toString());
-            params.delete("zona");
+            params.delete("departamento");
             router.push(`/escuelas?${params.toString()}`);
           }}
           className="text-xs text-gray-500 hover:text-gray-700 underline"

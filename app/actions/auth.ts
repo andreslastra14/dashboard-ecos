@@ -33,12 +33,6 @@ export async function login(
   }
 
   await createSession(user);
-  // SSO: si el login vino de otro subdominio de ecos-app.com (p.ej. install),
-  // regresar allá tras autenticar. Solo se permite *.ecos-app.com (anti open-redirect).
-  const from = (formData.get("from") as string) || "";
-  if (from && /^https:\/\/([a-z0-9-]+\.)*ecos-app\.com(\/|$)/i.test(from)) {
-    redirect(from);
-  }
   redirect("/");
 }
 

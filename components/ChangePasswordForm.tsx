@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { changePassword, type ChangePasswordState } from "@/app/actions/auth";
 
@@ -21,16 +21,12 @@ export function ChangePasswordForm({
     undefined,
   );
   const router = useRouter();
-  const [done, setDone] = useState(false);
+  const done = Boolean(state?.ok && !redirectTo);
 
   useEffect(() => {
-    if (state?.ok) {
-      if (redirectTo) {
-        router.push(redirectTo);
-        router.refresh();
-      } else {
-        setDone(true);
-      }
+    if (state?.ok && redirectTo) {
+      router.push(redirectTo);
+      router.refresh();
     }
   }, [state, redirectTo, router]);
 

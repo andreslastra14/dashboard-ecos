@@ -168,9 +168,7 @@ function calcularMttr(registros: RegistroHistorico[]): SlaResult {
 
 function calcularUpsHealth(dispositivos: Dispositivo[]): SlaResult {
   const total = dispositivos.length;
-  const ok = dispositivos.filter(
-    (d) => d.ups_conectada === true || d.ups_status === "CON_LUZ",
-  ).length;
+  const ok = dispositivos.filter((d) => d.ups_conectada === true).length;
   const valor = total > 0 ? Math.round((ok / total) * 1000) / 10 : 0;
   return makeResult(valor, "%", 90, ">=");
 }

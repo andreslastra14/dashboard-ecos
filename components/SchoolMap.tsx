@@ -62,12 +62,12 @@ export function SchoolMap({
           <CircleMarker
             key={m.id}
             center={[m.lat, m.lng]}
-            radius={12}
+            radius={6}
             pathOptions={{
               color,
               fillColor: color,
-              fillOpacity: 0.9,
-              weight: 2,
+              fillOpacity: 0.55,
+              weight: 1.5,
             }}
           >
             <Popup>

@@ -1,18 +1,12 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState } from "react";
 import { login, type LoginState } from "@/app/actions/auth";
 import Image from "next/image";
 import Link from "next/link";
 
 export default function LoginPage() {
   const [state, formAction, pending] = useActionState<LoginState, FormData>(login, undefined);
-  // SSO: si llegó ?from=…ecos-app.com (p.ej. desde install), lo reenviamos al action.
-  const [from, setFrom] = useState("");
-  useEffect(() => {
-    const f = new URLSearchParams(window.location.search).get("from") || "";
-    if (/^https:\/\/([a-z0-9-]+\.)*ecos-app\.com(\/|$)/i.test(f)) setFrom(f);
-  }, []);
 
   return (
     <div className="w-full max-w-sm mx-4">
@@ -31,7 +25,6 @@ export default function LoginPage() {
         </div>
 
         <form action={formAction} className="flex flex-col gap-4">
-          <input type="hidden" name="from" value={from} />
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
               Usuario
