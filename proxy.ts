@@ -4,8 +4,8 @@ import type { NextRequest } from "next/server";
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Allow login page and auth API
-  if (pathname.startsWith("/login") || pathname.startsWith("/api")) {
+  // Allow login page, auth API y la demo pública (/demo → proyecto ecos-demo)
+  if (pathname.startsWith("/login") || pathname.startsWith("/api") || pathname.startsWith("/demo")) {
     return NextResponse.next();
   }
 
