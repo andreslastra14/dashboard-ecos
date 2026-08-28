@@ -135,11 +135,11 @@ export function Header({ userName, canGenerateReport, userZona, devices = [], so
       <header className="flex items-center gap-3 px-4 lg:px-6 py-2.5 z-10 border-b shrink-0" style={{ backgroundColor: "#04263e", borderColor: "#0062a8" }}>
         <div className="shrink-0">
           <Image
-            src="/brand/rapidnet-logo-256.png"
+            src="/brand/rapidnet-white-256.png"
             alt="RapidNet"
             width={110}
             height={28}
-            className="rounded bg-white p-1 object-contain"
+            className="object-contain"
           />
         </div>
 

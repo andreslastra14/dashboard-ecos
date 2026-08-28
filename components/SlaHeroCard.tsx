@@ -61,11 +61,11 @@ export function SlaHeroCard({
       <div className="relative px-5 lg:px-6 py-4 border-b" style={{ borderColor: "#0062a8" }}>
         <div className="flex items-center gap-3">
           <Image
-            src="/brand/rapidnet-logo-256.png"
+            src="/brand/rapidnet-white-256.png"
             alt="RapidNet"
             width={110}
             height={28}
-            className="rounded bg-white p-1 object-contain shrink-0"
+            className="object-contain shrink-0"
           />
           <div className="min-w-0 flex-1">
             <p
