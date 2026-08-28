@@ -82,7 +82,7 @@ export function TicketFilter({ tickets }: { tickets: SerializedCaso[] }) {
               className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
               style={
                 activeTab === key
-                  ? { backgroundColor: "#1e3a5f", color: "#fff" }
+                  ? { backgroundColor: "#0062a8", color: "#fff" }
                   : { backgroundColor: "#f1f5f9", color: "#64748b" }
               }
             >
@@ -102,7 +102,7 @@ export function TicketFilter({ tickets }: { tickets: SerializedCaso[] }) {
               <thead>
                 <tr className="border-b border-gray-100 text-left text-xs text-gray-500 uppercase tracking-wide">
                   <th className="px-4 py-3">ID Caso</th>
-                  <th className="px-4 py-3">Escuela</th>
+                  <th className="px-4 py-3">Oficina</th>
                   <th className="px-4 py-3">Motivo</th>
                   <th className="px-4 py-3">Estado</th>
                   <th className="px-4 py-3">Operador</th>

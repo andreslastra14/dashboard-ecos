@@ -9,7 +9,7 @@ interface SlaMiniCardProps {
 }
 
 function semaforoColor(sla: SlaResult): string {
-  if (sla.cumple) return "#1e3a5f";
+  if (sla.cumple) return "#0062a8";
   const target = sla.target;
   const valor = sla.valor;
   const ambar =

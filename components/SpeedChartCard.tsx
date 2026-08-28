@@ -118,12 +118,12 @@ export function SpeedChartCard({ data, title, initialHours = 12 }: Props) {
         <AreaChart data={bucketed} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
           <defs>
             <linearGradient id={gradDesc} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#1e3a5f" stopOpacity={0.25} />
-              <stop offset="95%" stopColor="#1e3a5f" stopOpacity={0} />
+              <stop offset="5%" stopColor="#0062a8" stopOpacity={0.25} />
+              <stop offset="95%" stopColor="#0062a8" stopOpacity={0} />
             </linearGradient>
             <linearGradient id={gradSub} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#2e6da4" stopOpacity={0.18} />
-              <stop offset="95%" stopColor="#2e6da4" stopOpacity={0} />
+              <stop offset="5%" stopColor="#0a78c8" stopOpacity={0.18} />
+              <stop offset="95%" stopColor="#0a78c8" stopOpacity={0} />
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
@@ -149,7 +149,7 @@ export function SpeedChartCard({ data, title, initialHours = 12 }: Props) {
           <Area
             type="monotone"
             dataKey="descarga"
-            stroke="#1e3a5f"
+            stroke="#0062a8"
             fill={`url(#${gradDesc})`}
             strokeWidth={2.2}
             strokeLinecap="round"
@@ -163,7 +163,7 @@ export function SpeedChartCard({ data, title, initialHours = 12 }: Props) {
           <Area
             type="monotone"
             dataKey="subida"
-            stroke="#2e6da4"
+            stroke="#0a78c8"
             fill={`url(#${gradSub})`}
             strokeWidth={2}
             strokeLinecap="round"

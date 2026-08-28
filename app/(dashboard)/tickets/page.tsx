@@ -15,20 +15,20 @@ export default function TicketsPage() {
         <CardContent className="flex flex-col items-center justify-center text-center gap-4 py-20">
           <div
             className="flex items-center justify-center w-16 h-16 rounded-2xl"
-            style={{ backgroundColor: "#1e3a5f15" }}
+            style={{ backgroundColor: "#0062a815" }}
           >
-            <Tag size={32} style={{ color: "#1e3a5f" }} />
+            <Tag size={32} style={{ color: "#0062a8" }} />
           </div>
           <div>
             <span
               className="inline-block rounded-full px-3 py-1 text-xs font-semibold text-white mb-3"
-              style={{ backgroundColor: "#1e3a5f" }}
+              style={{ backgroundColor: "#0062a8" }}
             >
               Proximamente
             </span>
             <h2 className="text-lg font-bold text-gray-900">Sistema de tickets en construccion</h2>
             <p className="text-sm text-gray-500 mt-1 max-w-md">
-              La gestion de casos se integrara con el sistema de tickets de ECOS. Esta seccion estara
+              La gestion de casos se integrara con el sistema de tickets de RapidNet. Esta seccion estara
               disponible pronto.
             </p>
           </div>

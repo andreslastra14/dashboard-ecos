@@ -101,19 +101,19 @@ export default async function Home({ searchParams }: PageProps) {
       label: "Sondas Activas",
       value: `${sondasActivas}/${totalDispositivos}`,
       icon: Wifi,
-      color: "#1e3a5f",
+      color: "#0062a8",
     },
     {
       label: "Ethernet Prom.",
       value: ethPromedio > 0 ? `${ethPromedio} Mbps` : "--",
       icon: Download,
-      color: "#1e3a5f",
+      color: "#0062a8",
     },
     {
       label: "WiFi Prom.",
       value: wifiPromedio > 0 ? `${wifiPromedio} Mbps` : "--",
       icon: Wifi,
-      color: "#2e6da4",
+      color: "#0a78c8",
     },
     {
       label: "Calidad de Red",

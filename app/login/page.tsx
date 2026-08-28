@@ -10,18 +10,18 @@ export default function LoginPage() {
 
   return (
     <div className="w-full max-w-sm mx-4">
-      <div className="rounded-xl border bg-white shadow-lg p-8" style={{ borderColor: "#1e3a5f20" }}>
+      <div className="rounded-xl border bg-white shadow-lg p-8" style={{ borderColor: "#0062a820" }}>
         {/* Logo */}
         <div className="flex flex-col items-center mb-6">
           <Image
-            src="/brand/ecos-logo-256.png"
-            alt="ECOS"
-            width={120}
-            height={120}
+            src="/brand/rapidnet-logo-256.png"
+            alt="RapidNet"
+            width={180}
+            height={45}
             className="object-contain mb-2"
             priority
           />
-          <p className="text-xs text-gray-500">Monitoreo de Red Escolar</p>
+          <p className="text-xs text-gray-500">Monitoreo de Red Corporativa</p>
         </div>
 
         <form action={formAction} className="flex flex-col gap-4">
@@ -62,7 +62,7 @@ export default function LoginPage() {
             type="submit"
             disabled={pending}
             className="w-full rounded-lg py-2.5 text-sm font-semibold text-white transition-colors disabled:opacity-60"
-            style={{ backgroundColor: "#1e3a5f" }}
+            style={{ backgroundColor: "#0062a8" }}
           >
             {pending ? "Ingresando..." : "Ingresar"}
           </button>
@@ -76,7 +76,7 @@ export default function LoginPage() {
         </form>
 
         <p className="text-center text-xs text-gray-400 mt-6">
-          Ministerio de Educación · El Salvador
+          RapidNet · El Salvador
         </p>
       </div>
     </div>

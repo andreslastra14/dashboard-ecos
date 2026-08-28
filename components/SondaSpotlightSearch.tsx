@@ -69,7 +69,7 @@ function selectedSummary(devices: SondaSearchDevice[], searchParams: { get: (nam
   if (departamentos.length) parts.push(departamentos.join(", "));
   if (zonas.length) parts.push(zonas.join(", "));
   if (estados.length) parts.push(estados.map((e) => (e === "online" ? "Online" : "Offline")).join(", "));
-  return parts.length ? parts.join(" · ") : "Buscar sondas, escuelas, código o departamento";
+  return parts.length ? parts.join(" · ") : "Buscar sondas, oficinas, código o departamento";
 }
 
 export function SondaSpotlightSearch({
@@ -206,7 +206,7 @@ export function SondaSpotlightSearch({
         type="button"
         onClick={openSearch}
         className="flex h-10 w-full min-w-0 items-center gap-2 rounded-lg border px-3 text-left text-sm transition-all hover:bg-white/10"
-        style={{ backgroundColor: "#0f1d32", borderColor: "#1e3a5f", color: "#cbd5e1" }}
+        style={{ backgroundColor: "#0f1d32", borderColor: "#0062a8", color: "#cbd5e1" }}
         title="Buscar sondas"
       >
         <Search size={16} className="shrink-0" style={{ color: "#94a3b8" }} />
@@ -381,7 +381,7 @@ export function SondaSpotlightSearch({
                   type="button"
                   onClick={applyFilters}
                   className="h-9 rounded-md px-4 text-xs font-bold text-white disabled:opacity-60"
-                  style={{ backgroundColor: "#1e3a5f" }}
+                  style={{ backgroundColor: "#0062a8" }}
                 >
                   Aplicar selección
                 </button>

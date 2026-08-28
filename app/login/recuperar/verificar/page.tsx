@@ -40,7 +40,7 @@ function Form() {
 
   return (
     <div className="w-full max-w-sm mx-4">
-      <div className="rounded-xl border bg-white shadow-lg p-8" style={{ borderColor: "#1e3a5f20" }}>
+      <div className="rounded-xl border bg-white shadow-lg p-8" style={{ borderColor: "#0062a820" }}>
         <h1 className="text-lg font-semibold text-gray-900 mb-1">Verificar código</h1>
         <p className="text-sm text-gray-500 mb-5">
           Revisa el correo <span className="font-medium text-gray-700">{email}</span> e ingresa el código que recibiste.
@@ -96,7 +96,7 @@ function Form() {
               type="submit"
               disabled={pending || code.length !== 6 || password.length < 8}
               className="w-full rounded-lg py-2.5 text-sm font-semibold text-white transition-colors disabled:opacity-60"
-              style={{ backgroundColor: "#1e3a5f" }}
+              style={{ backgroundColor: "#0062a8" }}
             >
               {pending ? "Actualizando..." : "Actualizar contraseña"}
             </button>

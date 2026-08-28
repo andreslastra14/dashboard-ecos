@@ -7,8 +7,8 @@ export interface UptimeData {
 }
 
 function getColor(uptime: number): string {
-  if (uptime >= 95) return "#1e3a5f";
-  if (uptime >= 90) return "#2e6da4";
+  if (uptime >= 95) return "#0062a8";
+  if (uptime >= 90) return "#0a78c8";
   return "#b91c1c";
 }
 

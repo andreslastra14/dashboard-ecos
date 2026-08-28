@@ -14,7 +14,7 @@ export function SlaStatusCards({ normal, offline }: SlaStatusCardsProps) {
       >
         <div
           className="absolute top-0 right-0 w-24 h-24 rounded-full opacity-[0.04] -translate-y-8 translate-x-8"
-          style={{ backgroundColor: "#1e3a5f" }}
+          style={{ backgroundColor: "#0062a8" }}
         />
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
@@ -26,7 +26,7 @@ export function SlaStatusCards({ normal, offline }: SlaStatusCardsProps) {
             </p>
             <p
               className="text-4xl font-bold font-mono leading-none"
-              style={{ color: "#1e3a5f" }}
+              style={{ color: "#0062a8" }}
             >
               {normal}
             </p>
@@ -40,9 +40,9 @@ export function SlaStatusCards({ normal, offline }: SlaStatusCardsProps) {
           </div>
           <div
             className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
-            style={{ backgroundColor: "#1e3a5f14" }}
+            style={{ backgroundColor: "#0062a814" }}
           >
-            <CheckmarkFilled size={20} style={{ color: "#1e3a5f" }} />
+            <CheckmarkFilled size={20} style={{ color: "#0062a8" }} />
           </div>
         </div>
       </div>

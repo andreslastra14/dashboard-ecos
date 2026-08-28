@@ -77,12 +77,12 @@ export function SlaBreakdownCard({
         style={{ borderColor: "#e2e8f0" }}
       >
         <span className="text-xs flex items-center gap-1.5" style={{ color: "#64748b" }}>
-          <CheckmarkFilled size={14} style={{ color: "#1e3a5f" }} />
+          <CheckmarkFilled size={14} style={{ color: "#0062a8" }} />
           {totalLabel}
         </span>
         <span
           className="text-sm font-mono font-semibold"
-          style={{ color: "#1e3a5f" }}
+          style={{ color: "#0062a8" }}
         >
           {totalGeneral} {totalUnidad}
         </span>

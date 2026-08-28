@@ -70,7 +70,7 @@ export function ChangePasswordForm({
         type="submit"
         disabled={pending}
         className="w-full rounded-lg py-2.5 text-sm font-semibold text-white transition-all hover:brightness-110 disabled:opacity-60"
-        style={{ backgroundColor: "#1e3a5f" }}
+        style={{ backgroundColor: "#0062a8" }}
       >
         {pending ? "Guardando..." : ctaLabel}
       </button>

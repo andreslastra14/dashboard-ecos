@@ -32,7 +32,7 @@ function HealthBar({ label, value, unit, icon: Icon, max, threshold, alert, coun
   const pct = Math.min((value / max) * 100, 100);
   const triggered = alert === "above" ? value > threshold : value < threshold && value > 0;
   const warning = alert === "above" ? value > threshold * 0.8 : value < threshold * 1.2 && value > 0;
-  const color = triggered ? "#b91c1c" : warning ? "#d97706" : "#1e3a5f";
+  const color = triggered ? "#b91c1c" : warning ? "#d97706" : "#0062a8";
 
   return (
     <div className="flex items-center gap-3">

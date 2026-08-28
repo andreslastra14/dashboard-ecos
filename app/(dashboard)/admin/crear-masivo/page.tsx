@@ -15,7 +15,7 @@ export default function CrearMasivoPage() {
         <Link href="/admin" className="p-1.5 rounded-md hover:bg-gray-100 transition-colors">
           <ArrowLeft size={20} className="text-gray-500" />
         </Link>
-        <h1 className="text-xl font-bold" style={{ color: "#1e3a5f" }}>Alta masiva de usuarios</h1>
+        <h1 className="text-xl font-bold" style={{ color: "#0062a8" }}>Alta masiva de usuarios</h1>
       </div>
 
       <div className="rounded-xl border border-gray-100 bg-white shadow-sm p-6">
@@ -74,7 +74,7 @@ export default function CrearMasivoPage() {
 
           <button type="submit" disabled={pending}
             className="w-full rounded-lg py-2.5 text-sm font-semibold text-white transition-colors disabled:opacity-60"
-            style={{ backgroundColor: "#1e3a5f" }}>
+            style={{ backgroundColor: "#0062a8" }}>
             {pending ? "Creando..." : "Crear usuarios"}
           </button>
         </form>

@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ECOS — Monitoreo de Red Escolar",
-  description: "ECOS — Sistema de monitoreo de conectividad escolar — Ministerio de Educación de El Salvador",
+  title: "RapidNet — Monitoreo de Red",
+  description: "RapidNet — Sistema de monitoreo de conectividad corporativa — El Salvador (DEMO)",
 };
 
 export default function RootLayout({

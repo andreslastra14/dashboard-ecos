@@ -4,6 +4,11 @@ import type { NextRequest } from "next/server";
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Rama demo-rapidnet: sin contraseña — todo pasa sin sesión.
+  if (process.env.DEMO_MODE !== "0") {
+    return NextResponse.next();
+  }
+
   // Allow login page and auth API
   if (pathname.startsWith("/login") || pathname.startsWith("/api")) {
     return NextResponse.next();

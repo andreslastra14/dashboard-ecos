@@ -1,8 +1,8 @@
 import { Document, Page, Text, View, StyleSheet, Svg, Rect, Line, Circle, G } from "@react-pdf/renderer";
 import type { ReportData, DailyStats, SondaDetail } from "./report-data";
 
-const blue = "#1e3a5f";
-const midBlue = "#2e6da4";
+const blue = "#0062a8";
+const midBlue = "#0a78c8";
 const lightBlue = "#e8f0fe";
 const gray = "#64748b";
 const green = "#16a34a";
@@ -220,13 +220,13 @@ export function ZoneReportDocument({ data }: { data: ReportData }) {
         <Text style={{ fontSize: 18, color: blue, fontFamily: "Helvetica-Bold", textAlign: "center" }}>
           {data.zonas.length === 1 ? data.zonas[0] : `${data.zonas.length} Departamentos`}
         </Text>
-        <Text style={s.coverSubtitle}>Ministerio de Educacion de El Salvador</Text>
+        <Text style={s.coverSubtitle}>RapidNet · El Salvador (DEMO)</Text>
         <Text style={s.coverRange}>Periodo: {data.desde} al {data.hasta}</Text>
         {data.zonas.length > 1 && (
           <Text style={s.coverZones}>Zonas: {data.zonas.join(", ")}</Text>
         )}
         <Text style={s.coverDate}>Generado: {data.fechaGeneracion}</Text>
-        <Text style={s.coverFooter}>ECOS — Sistema de Monitoreo de Red Escolar</Text>
+        <Text style={s.coverFooter}>RapidNet — Sistema de Monitoreo de Red Corporativa</Text>
       </Page>
 
       {/* Summary page */}
@@ -239,7 +239,7 @@ export function ZoneReportDocument({ data }: { data: ReportData }) {
         <View style={s.kpiRow}>
           <View style={s.kpiCard}>
             <Text style={s.kpiValue}>{data.totalEscuelas}</Text>
-            <Text style={s.kpiLabel}>Total Escuelas</Text>
+            <Text style={s.kpiLabel}>Total Oficinas</Text>
           </View>
           <View style={s.kpiCard}>
             <Text style={[s.kpiValue, { color: green }]}>{data.online}</Text>
@@ -271,7 +271,7 @@ export function ZoneReportDocument({ data }: { data: ReportData }) {
         </View>
 
         <View style={s.footer}>
-          <Text>ECOS — MINED El Salvador</Text>
+          <Text>RapidNet — El Salvador</Text>
           <Text>{data.fechaGeneracion}</Text>
         </View>
       </Page>
@@ -288,7 +288,7 @@ export function ZoneReportDocument({ data }: { data: ReportData }) {
           <SpeedChart data={data.dailyStats} />
 
           <View style={s.footer}>
-            <Text>ECOS — MINED El Salvador</Text>
+            <Text>RapidNet — El Salvador</Text>
             <Text>{data.fechaGeneracion}</Text>
           </View>
         </Page>
@@ -324,7 +324,7 @@ export function ZoneReportDocument({ data }: { data: ReportData }) {
           </View>
 
           <View style={s.footer}>
-            <Text>ECOS — MINED El Salvador</Text>
+            <Text>RapidNet — El Salvador</Text>
             <Text>{data.fechaGeneracion}</Text>
           </View>
         </Page>
@@ -338,7 +338,7 @@ export function ZoneReportDocument({ data }: { data: ReportData }) {
           <View style={s.kpiRow}>
             <View style={s.kpiCard}>
               <Text style={s.kpiValue}>{zone.totalEscuelas}</Text>
-              <Text style={s.kpiLabel}>Escuelas</Text>
+              <Text style={s.kpiLabel}>Oficinas</Text>
             </View>
             <View style={s.kpiCard}>
               <Text style={[s.kpiValue, { color: green }]}>{zone.online}</Text>
@@ -362,15 +362,15 @@ export function ZoneReportDocument({ data }: { data: ReportData }) {
             </View>
           </View>
 
-          <Text style={s.subTitle}>Detalle por Escuela</Text>
+          <Text style={s.subTitle}>Detalle por Oficina</Text>
           <View style={s.table}>
             <View style={s.tableHeader}>
-              <Text style={[s.tableHeaderCell, { width: "28%" }]}>Escuela</Text>
+              <Text style={[s.tableHeaderCell, { width: "28%" }]}>Oficina</Text>
               <Text style={[s.tableHeaderCell, { width: "12%" }]}>Estado</Text>
               <Text style={[s.tableHeaderCell, { width: "12%" }]}>Vel. (Mbps)</Text>
               <Text style={[s.tableHeaderCell, { width: "14%" }]}>UPS</Text>
               <Text style={[s.tableHeaderCell, { width: "10%" }]}>UPS %</Text>
-              <Text style={[s.tableHeaderCell, { width: "12%" }]}>MINED</Text>
+              <Text style={[s.tableHeaderCell, { width: "12%" }]}>Portal</Text>
               <Text style={[s.tableHeaderCell, { width: "12%" }]}>Filtro</Text>
             </View>
             {zone.escuelas.map((e, i) => (
@@ -389,7 +389,7 @@ export function ZoneReportDocument({ data }: { data: ReportData }) {
           </View>
 
           <View style={s.footer}>
-            <Text>ECOS — MINED El Salvador</Text>
+            <Text>RapidNet — El Salvador</Text>
             <Text>{data.fechaGeneracion}</Text>
           </View>
         </Page>
@@ -420,7 +420,7 @@ export function ZoneReportDocument({ data }: { data: ReportData }) {
                 <Text style={[s.tableHeaderCell, { width: "7%" }]}>RAM %</Text>
                 <Text style={[s.tableHeaderCell, { width: "9%" }]}>UPS</Text>
                 <Text style={[s.tableHeaderCell, { width: "7%" }]}>UPS %</Text>
-                <Text style={[s.tableHeaderCell, { width: "11%" }]}>MINED</Text>
+                <Text style={[s.tableHeaderCell, { width: "11%" }]}>Portal</Text>
                 <Text style={[s.tableHeaderCell, { width: "11%" }]}>Adultos</Text>
                 <Text style={[s.tableHeaderCell, { width: "11%" }]}>Streaming</Text>
                 <Text style={[s.tableHeaderCell, { width: "10%" }]}>Apuestas</Text>
@@ -454,7 +454,7 @@ export function ZoneReportDocument({ data }: { data: ReportData }) {
           )}
 
           <View style={s.footer} fixed>
-            <Text>ECOS — MINED El Salvador</Text>
+            <Text>RapidNet — El Salvador</Text>
             <Text>{data.fechaGeneracion}</Text>
           </View>
         </Page>
@@ -468,7 +468,7 @@ export function ZoneReportDocument({ data }: { data: ReportData }) {
           <View style={s.table}>
             <View style={s.tableHeader}>
               <Text style={[s.tableHeaderCell, { width: "15%" }]}>ID Caso</Text>
-              <Text style={[s.tableHeaderCell, { width: "20%" }]}>Escuela</Text>
+              <Text style={[s.tableHeaderCell, { width: "20%" }]}>Oficina</Text>
               <Text style={[s.tableHeaderCell, { width: "18%" }]}>Zona</Text>
               <Text style={[s.tableHeaderCell, { width: "17%" }]}>Motivo</Text>
               <Text style={[s.tableHeaderCell, { width: "15%" }]}>Estado</Text>
@@ -487,7 +487,7 @@ export function ZoneReportDocument({ data }: { data: ReportData }) {
           </View>
 
           <View style={s.footer}>
-            <Text>ECOS — MINED El Salvador</Text>
+            <Text>RapidNet — El Salvador</Text>
             <Text>{data.fechaGeneracion}</Text>
           </View>
         </Page>

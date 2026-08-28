@@ -30,8 +30,8 @@ interface InsightItem {
   color: string;
 }
 
-const BLUE_PRIMARY = "#1e3a5f";
-const BLUE_SECONDARY = "#2e6da4";
+const BLUE_PRIMARY = "#0062a8";
+const BLUE_SECONDARY = "#0a78c8";
 const BLUE_TERTIARY = "#3b82a0";
 const GREEN_OK = "#1e5f4a";
 const RED_CRITICAL = "#b91c1c";
@@ -47,7 +47,7 @@ export function InsightsPanel({ data }: { data: InsightsData }) {
     },
     {
       icon: Globe,
-      label: "Portal MINED",
+      label: "Portal Web",
       value: data.minedInaccesible > 0 ? `${data.minedInaccesible} sin acceso` : "Conectados",
       detail: `${data.minedTotalCount - data.minedInaccesible}/${data.minedTotalCount} con acceso`,
       color: data.minedInaccesible > 0 ? BLUE_SECONDARY : GREEN_OK,

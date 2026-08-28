@@ -17,7 +17,7 @@ function LiveDate() {
   );
 
   return (
-    <div className="text-xs px-2 py-1 rounded font-mono hidden sm:block" style={{ backgroundColor: "#1e3a5f", color: "#93c5fd" }}>
+    <div className="text-xs px-2 py-1 rounded font-mono hidden sm:block" style={{ backgroundColor: "#0062a8", color: "#93c5fd" }}>
       {date}
     </div>
   );
@@ -61,7 +61,7 @@ function UserMenu({ userName }: { userName: string }) {
       {open && (
         <div
           className="absolute right-0 mt-1 w-44 rounded-lg border shadow-xl overflow-hidden z-50"
-          style={{ backgroundColor: "#0f1d32", borderColor: "#1e3a5f" }}
+          style={{ backgroundColor: "#0f1d32", borderColor: "#0062a8" }}
         >
           <Link
             href="/configuracion"
@@ -72,7 +72,7 @@ function UserMenu({ userName }: { userName: string }) {
             <Settings size={16} style={{ color: "#94a3b8" }} />
             Configuración
           </Link>
-          <form action={logout} className="border-t" style={{ borderColor: "#1e3a5f" }}>
+          <form action={logout} className="border-t" style={{ borderColor: "#0062a8" }}>
             <button
               type="submit"
               className="w-full flex items-center gap-2 px-3 py-2.5 text-sm transition-colors hover:bg-white/5 text-left"
@@ -132,23 +132,23 @@ export function Header({ userName, canGenerateReport, userZona, devices = [], so
 
   return (
     <>
-      <header className="flex items-center gap-3 px-4 lg:px-6 py-2.5 z-10 border-b shrink-0" style={{ backgroundColor: "#0a1628", borderColor: "#1e3a5f" }}>
+      <header className="flex items-center gap-3 px-4 lg:px-6 py-2.5 z-10 border-b shrink-0" style={{ backgroundColor: "#04263e", borderColor: "#0062a8" }}>
         <div className="shrink-0">
           <Image
-            src="/brand/ecos-icon-128.png"
-            alt="ECOS"
-            width={40}
-            height={40}
-            className="rounded object-contain"
+            src="/brand/rapidnet-logo-256.png"
+            alt="RapidNet"
+            width={110}
+            height={28}
+            className="rounded bg-white p-1 object-contain"
           />
         </div>
 
         <div className="flex flex-col min-w-0">
           <span className="text-white font-bold text-sm leading-tight tracking-wide uppercase truncate">
-            ECOS
+            RapidNet
           </span>
           <span className="text-blue-400 text-xs leading-tight truncate">
-            Ministerio de Educacion · El Salvador
+            Monitoreo de Red Corporativa · El Salvador
           </span>
         </div>
 
@@ -173,7 +173,7 @@ export function Header({ userName, canGenerateReport, userZona, devices = [], so
             <button
               onClick={handleReportClick}
               className="no-print inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all hover:brightness-110"
-              style={{ backgroundColor: "#1e3a5f", color: "#93c5fd" }}
+              style={{ backgroundColor: "#0062a8", color: "#93c5fd" }}
               title={isDashboardSla ? "Imprimir Reporte SLA" : "Generar Reporte PDF"}
             >
               {isDashboardSla ? <Printer size={14} /> : <FileDown size={14} />}

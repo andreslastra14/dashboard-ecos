@@ -131,7 +131,7 @@ export default async function VelocidadPage({ searchParams }: PageProps) {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-gray-100 text-left text-xs text-gray-500 uppercase tracking-wide">
-                    <th className="px-4 py-3">Escuela</th>
+                    <th className="px-4 py-3">Oficina</th>
                     <th className="px-4 py-3">Estado</th>
                     <th className="px-4 py-3">Ethernet Actual</th>
                     <th className="px-4 py-3">WiFi Actual</th>

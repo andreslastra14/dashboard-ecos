@@ -265,6 +265,22 @@ export async function getUserByEmail(email: string): Promise<Usuario | null> {
 // Cacheada por request — el layout, las páginas admin y los server actions
 // la suelen llamar varias veces para refrescar el role del usuario actual.
 export const getUserById = cache(async (id: string): Promise<Usuario | null> => {
+  // Rama demo-rapidnet: usuario ficticio, sin tocar la BD.
+  if (process.env.DEMO_MODE !== "0") {
+    return {
+      id: "demo",
+      email: "demo@rapidnetsv.com",
+      password_hash: "",
+      nombre: "Demo RapidNet",
+      role: "operador",
+      zona_asignada: null,
+      sonda_asignada: null,
+      activo: true,
+      creado: new Date(0).toISOString(),
+      ultimo_login: null,
+      requiere_cambio_pwd: false,
+    };
+  }
   const s = await detectSchema();
   const numeric = id.startsWith("u:") ? parseInt(id.slice(2), 10) : parseInt(id, 10);
   if (!Number.isFinite(numeric)) return null;

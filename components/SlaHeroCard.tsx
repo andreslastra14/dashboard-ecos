@@ -46,26 +46,26 @@ export function SlaHeroCard({
     <div
       className="relative overflow-hidden rounded-xl border shadow-sm"
       style={{
-        backgroundColor: "#0a1628",
-        borderColor: "#1e3a5f",
+        backgroundColor: "#04263e",
+        borderColor: "#0062a8",
       }}
     >
       <div
         className="absolute inset-0 opacity-30 pointer-events-none"
         style={{
           background:
-            "radial-gradient(ellipse 90% 60% at 100% 0%, #2e6da4 0%, transparent 60%), radial-gradient(ellipse 80% 70% at 0% 100%, #1e3a5f 0%, transparent 50%)",
+            "radial-gradient(ellipse 90% 60% at 100% 0%, #0a78c8 0%, transparent 60%), radial-gradient(ellipse 80% 70% at 0% 100%, #0062a8 0%, transparent 50%)",
         }}
       />
 
-      <div className="relative px-5 lg:px-6 py-4 border-b" style={{ borderColor: "#1e3a5f" }}>
+      <div className="relative px-5 lg:px-6 py-4 border-b" style={{ borderColor: "#0062a8" }}>
         <div className="flex items-center gap-3">
           <Image
-            src="/brand/ecos-icon-128.png"
-            alt="ECOS"
-            width={32}
-            height={32}
-            className="rounded object-contain shrink-0"
+            src="/brand/rapidnet-logo-256.png"
+            alt="RapidNet"
+            width={110}
+            height={28}
+            className="rounded bg-white p-1 object-contain shrink-0"
           />
           <div className="min-w-0 flex-1">
             <p
@@ -121,21 +121,21 @@ export function SlaHeroCard({
           <div className="flex items-center gap-2 flex-wrap">
             <div
               className="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-mono"
-              style={{ backgroundColor: "#1e3a5f", color: "#93c5fd" }}
+              style={{ backgroundColor: "#0062a8", color: "#93c5fd" }}
             >
               <span style={{ color: "#64748b" }} className="text-[10px] uppercase tracking-wider">Fecha</span>
               <span>{formatFecha(fechaCorte)}</span>
             </div>
             <div
               className="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-mono"
-              style={{ backgroundColor: "#1e3a5f", color: "#93c5fd" }}
+              style={{ backgroundColor: "#0062a8", color: "#93c5fd" }}
             >
               <span style={{ color: "#64748b" }} className="text-[10px] uppercase tracking-wider">Corte</span>
               <span>{formatHora(fechaCorte)}</span>
             </div>
             <div
               className="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-mono"
-              style={{ backgroundColor: "#1e3a5f", color: "#93c5fd" }}
+              style={{ backgroundColor: "#0062a8", color: "#93c5fd" }}
             >
               <span style={{ color: "#64748b" }} className="text-[10px] uppercase tracking-wider">Sitios</span>
               <span>{total}</span>
@@ -152,7 +152,7 @@ export function SlaHeroCard({
             style={{
               width: `${pct}%`,
               background:
-                "linear-gradient(90deg, #2e6da4 0%, #4a7c8e 50%, #93c5fd 100%)",
+                "linear-gradient(90deg, #0a78c8 0%, #4a7c8e 50%, #93c5fd 100%)",
               boxShadow: "0 0 12px rgba(147, 197, 253, 0.4)",
             }}
           />

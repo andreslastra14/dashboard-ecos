@@ -66,7 +66,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
         <SlaHeroCard
           sla={sla.disponibilidad}
           titulo="Reporte de Estado de Enlaces"
-          subtitulo="Sistema de Monitoreo ECOS · MINED El Salvador"
+          subtitulo="Sistema de Monitoreo RapidNet · El Salvador"
           total={sla.desgloseEstado.total}
           online={sla.desgloseEstado.normal}
           fechaCorte={sla.fechaCorte}
@@ -89,7 +89,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
               label: "Normal",
               value: sla.desgloseEstado.normal,
               total: sla.desgloseEstado.total,
-              color: "#1e3a5f",
+              color: "#0062a8",
             },
             {
               label: "Offline",
@@ -153,7 +153,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
             {sla.porDepartamento.map((d) => {
               const color =
                 d.disponibilidad >= 99
-                  ? "#1e3a5f"
+                  ? "#0062a8"
                   : d.disponibilidad >= 90
                     ? "#d97706"
                     : "#b91c1c";

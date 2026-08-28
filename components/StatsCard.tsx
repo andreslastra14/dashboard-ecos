@@ -10,7 +10,7 @@ interface StatsCardProps {
 }
 
 const accentColors = {
-  blue: { border: "#2e6da4", icon: "#2e6da4", bg: "#eff6ff" },
+  blue: { border: "#0a78c8", icon: "#0a78c8", bg: "#eff6ff" },
   green: { border: "#16a34a", icon: "#16a34a", bg: "#f0fdf4" },
   orange: { border: "#ea580c", icon: "#ea580c", bg: "#fff7ed" },
   red: { border: "#dc2626", icon: "#dc2626", bg: "#fef2f2" },

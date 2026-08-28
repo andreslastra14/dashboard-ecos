@@ -124,7 +124,7 @@ export default async function EscuelasPage({
     <div className="space-y-6 max-w-7xl mx-auto">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Mapa de Escuelas</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Mapa de Oficinas</h1>
           <p className="text-sm text-gray-500 mt-1">Ubicacion y estado de cada dispositivo activo</p>
         </div>
         <div className="flex items-center gap-3 text-sm flex-wrap">
@@ -148,7 +148,7 @@ export default async function EscuelasPage({
         {(selectedIds.size > 0 || departamentos.length > 0 || zonas.length > 0 || estados.length > 0) && (
           <span
             className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium text-white"
-            style={{ backgroundColor: "#1e3a5f" }}
+            style={{ backgroundColor: "#0062a8" }}
           >
             Mostrando: {filterTitle(filters) || "selección"} ({sondas.length} dispositivos)
           </span>
@@ -171,7 +171,7 @@ export default async function EscuelasPage({
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 text-left text-xs text-gray-500 uppercase tracking-wide">
-                  <th className="px-4 py-3">Escuela</th>
+                  <th className="px-4 py-3">Oficina</th>
                   <th className="px-4 py-3">Serial</th>
                   <th className="px-4 py-3">Estado</th>
                   <th className="px-4 py-3">Ethernet</th>

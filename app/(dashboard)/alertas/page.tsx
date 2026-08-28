@@ -83,29 +83,29 @@ export default async function AlertasPage({ searchParams }: PageProps) {
             </div>
             <div>
               <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">Filtro Falla</p>
-              <p className="text-xl font-bold" style={{ color: devices.length > 0 && filtroFail > 0 ? "#b91c1c" : "#1e3a5f" }}>{filtroFail}</p>
+              <p className="text-xl font-bold" style={{ color: devices.length > 0 && filtroFail > 0 ? "#b91c1c" : "#0062a8" }}>{filtroFail}</p>
             </div>
           </CardContent>
         </Card>
         <Card className="rounded-2xl shadow-sm border bg-white" style={{ borderColor: "#e2e8f0" }}>
           <CardContent className="flex items-center gap-3 p-4">
-            <div className="flex items-center justify-center w-10 h-10 rounded-lg" style={{ backgroundColor: "#2e6da415" }}>
-              <Battery size={20} style={{ color: "#2e6da4" }} />
+            <div className="flex items-center justify-center w-10 h-10 rounded-lg" style={{ backgroundColor: "#0a78c815" }}>
+              <Battery size={20} style={{ color: "#0a78c8" }} />
             </div>
             <div>
               <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">UPS Conectadas</p>
-              <p className="text-xl font-bold" style={{ color: "#2e6da4" }}>{devices.filter((d) => d.ups_conectada).length}</p>
+              <p className="text-xl font-bold" style={{ color: "#0a78c8" }}>{devices.filter((d) => d.ups_conectada).length}</p>
             </div>
           </CardContent>
         </Card>
         <Card className="rounded-2xl shadow-sm border bg-white" style={{ borderColor: "#e2e8f0" }}>
           <CardContent className="flex items-center gap-3 p-4">
-            <div className="flex items-center justify-center w-10 h-10 rounded-lg" style={{ backgroundColor: "#1e3a5f15" }}>
-              <Cpu size={20} style={{ color: "#1e3a5f" }} />
+            <div className="flex items-center justify-center w-10 h-10 rounded-lg" style={{ backgroundColor: "#0062a815" }}>
+              <Cpu size={20} style={{ color: "#0062a8" }} />
             </div>
             <div>
               <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">Dispositivos</p>
-              <p className="text-xl font-bold" style={{ color: "#1e3a5f" }}>{devices.length}</p>
+              <p className="text-xl font-bold" style={{ color: "#0062a8" }}>{devices.length}</p>
             </div>
           </CardContent>
         </Card>
@@ -121,8 +121,8 @@ export default async function AlertasPage({ searchParams }: PageProps) {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 text-left text-xs text-gray-500 uppercase tracking-wide">
-                  <th className="px-4 py-3">Escuela</th>
-                  <th className="px-4 py-3">MINED</th>
+                  <th className="px-4 py-3">Oficina</th>
+                  <th className="px-4 py-3">Portal</th>
                   <th className="px-4 py-3">Adultos</th>
                   <th className="px-4 py-3">Apuestas</th>
                   <th className="px-4 py-3">Streaming</th>
@@ -167,7 +167,7 @@ export default async function AlertasPage({ searchParams }: PageProps) {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 text-left text-xs text-gray-500 uppercase tracking-wide">
-                  <th className="px-4 py-3">Escuela</th>
+                  <th className="px-4 py-3">Oficina</th>
                   <th className="px-4 py-3">Estado UPS</th>
                   <th className="px-4 py-3">Nivel</th>
                 </tr>
@@ -205,7 +205,7 @@ export default async function AlertasPage({ searchParams }: PageProps) {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 text-left text-xs text-gray-500 uppercase tracking-wide">
-                  <th className="px-4 py-3">Escuela</th>
+                  <th className="px-4 py-3">Oficina</th>
                   <th className="px-4 py-3">
                     <span className="flex items-center gap-1"><Cpu size={14} /> CPU</span>
                   </th>

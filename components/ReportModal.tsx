@@ -161,7 +161,7 @@ export function ReportModal({ open, onClose, userZona }: Props) {
       const blobUrl = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = blobUrl;
-      a.download = `reporte-ECOS-${desde}-a-${hasta}.pdf`;
+      a.download = `reporte-RapidNet-${desde}-a-${hasta}.pdf`;
       a.click();
       URL.revokeObjectURL(blobUrl);
       onClose();
@@ -184,10 +184,10 @@ export function ReportModal({ open, onClose, userZona }: Props) {
 
       <div
         className="relative w-full max-w-lg mx-4 rounded-2xl shadow-2xl border overflow-hidden"
-        style={{ backgroundColor: "#0f1d32", borderColor: "#1e3a5f" }}
+        style={{ backgroundColor: "#0f1d32", borderColor: "#0062a8" }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: "#1e3a5f" }}>
+        <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: "#0062a8" }}>
           <div className="flex items-center gap-2">
             <FileDown size={20} style={{ color: "#93c5fd" }} />
             <h2 className="text-base font-bold" style={{ color: "#e2e8f0" }}>Generar Reporte PDF</h2>
@@ -214,8 +214,8 @@ export function ReportModal({ open, onClose, userZona }: Props) {
                   className="px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all"
                   style={
                     preset === p.key
-                      ? { backgroundColor: "#1e3a5f", color: "#93c5fd", border: "1px solid #2e6da4" }
-                      : { backgroundColor: "#0a1628", color: "#94a3b8", border: "1px solid #1e3a5f" }
+                      ? { backgroundColor: "#0062a8", color: "#93c5fd", border: "1px solid #0a78c8" }
+                      : { backgroundColor: "#04263e", color: "#94a3b8", border: "1px solid #0062a8" }
                   }
                 >
                   {p.label}
@@ -231,7 +231,7 @@ export function ReportModal({ open, onClose, userZona }: Props) {
                     value={customDesde}
                     onChange={(e) => setCustomDesde(e.target.value)}
                     className="w-full rounded-lg border px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    style={{ backgroundColor: "#0a1628", color: "#cbd5e1", borderColor: "#1e3a5f" }}
+                    style={{ backgroundColor: "#04263e", color: "#cbd5e1", borderColor: "#0062a8" }}
                   />
                 </div>
                 <div className="flex-1">
@@ -241,7 +241,7 @@ export function ReportModal({ open, onClose, userZona }: Props) {
                     value={customHasta}
                     onChange={(e) => setCustomHasta(e.target.value)}
                     className="w-full rounded-lg border px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    style={{ backgroundColor: "#0a1628", color: "#cbd5e1", borderColor: "#1e3a5f" }}
+                    style={{ backgroundColor: "#04263e", color: "#cbd5e1", borderColor: "#0062a8" }}
                   />
                 </div>
               </div>
@@ -255,14 +255,14 @@ export function ReportModal({ open, onClose, userZona }: Props) {
 
           {/* Mode toggle: Zona / Sonda */}
           <div>
-            <div className="flex rounded-lg overflow-hidden border" style={{ borderColor: "#1e3a5f" }}>
+            <div className="flex rounded-lg overflow-hidden border" style={{ borderColor: "#0062a8" }}>
               <button
                 onClick={() => setMode("zona")}
                 className="flex-1 flex items-center justify-center gap-2 py-2 text-xs font-semibold transition-all"
                 style={
                   mode === "zona"
-                    ? { backgroundColor: "#1e3a5f", color: "#93c5fd" }
-                    : { backgroundColor: "#0a1628", color: "#64748b" }
+                    ? { backgroundColor: "#0062a8", color: "#93c5fd" }
+                    : { backgroundColor: "#04263e", color: "#64748b" }
                 }
               >
                 <Map size={14} />
@@ -273,8 +273,8 @@ export function ReportModal({ open, onClose, userZona }: Props) {
                 className="flex-1 flex items-center justify-center gap-2 py-2 text-xs font-semibold transition-all"
                 style={
                   mode === "sonda"
-                    ? { backgroundColor: "#1e3a5f", color: "#93c5fd" }
-                    : { backgroundColor: "#0a1628", color: "#64748b" }
+                    ? { backgroundColor: "#0062a8", color: "#93c5fd" }
+                    : { backgroundColor: "#04263e", color: "#64748b" }
                 }
               >
                 <Monitor size={14} />
@@ -317,16 +317,16 @@ export function ReportModal({ open, onClose, userZona }: Props) {
                       className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-left transition-all disabled:opacity-30"
                       style={
                         selected
-                          ? { backgroundColor: "#1e3a5f", color: "#93c5fd", border: "1px solid #2e6da4" }
-                          : { backgroundColor: "#0a162800", color: "#94a3b8", border: "1px solid #1e3a5f40" }
+                          ? { backgroundColor: "#0062a8", color: "#93c5fd", border: "1px solid #0a78c8" }
+                          : { backgroundColor: "#04263e00", color: "#94a3b8", border: "1px solid #0062a840" }
                       }
                     >
                       <div
                         className="w-4 h-4 rounded flex items-center justify-center shrink-0"
                         style={
                           selected
-                            ? { backgroundColor: "#2e6da4" }
-                            : { backgroundColor: "#0a1628", border: "1px solid #1e3a5f" }
+                            ? { backgroundColor: "#0a78c8" }
+                            : { backgroundColor: "#04263e", border: "1px solid #0062a8" }
                         }
                       >
                         {selected && <Check size={12} className="text-white" />}
@@ -360,11 +360,11 @@ export function ReportModal({ open, onClose, userZona }: Props) {
                 <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "#64748b" }} />
                 <input
                   type="text"
-                  placeholder="Buscar escuela o serial..."
+                  placeholder="Buscar oficina o serial..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full rounded-lg border pl-9 pr-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  style={{ backgroundColor: "#0a1628", color: "#cbd5e1", borderColor: "#1e3a5f" }}
+                  style={{ backgroundColor: "#04263e", color: "#cbd5e1", borderColor: "#0062a8" }}
                 />
               </div>
 
@@ -378,16 +378,16 @@ export function ReportModal({ open, onClose, userZona }: Props) {
                       className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-left transition-all"
                       style={
                         selected
-                          ? { backgroundColor: "#1e3a5f", color: "#93c5fd", border: "1px solid #2e6da4" }
-                          : { backgroundColor: "#0a162800", color: "#94a3b8", border: "1px solid #1e3a5f40" }
+                          ? { backgroundColor: "#0062a8", color: "#93c5fd", border: "1px solid #0a78c8" }
+                          : { backgroundColor: "#04263e00", color: "#94a3b8", border: "1px solid #0062a840" }
                       }
                     >
                       <div
                         className="w-4 h-4 rounded flex items-center justify-center shrink-0"
                         style={
                           selected
-                            ? { backgroundColor: "#2e6da4" }
-                            : { backgroundColor: "#0a1628", border: "1px solid #1e3a5f" }
+                            ? { backgroundColor: "#0a78c8" }
+                            : { backgroundColor: "#04263e", border: "1px solid #0062a8" }
                         }
                       >
                         {selected && <Check size={12} className="text-white" />}
@@ -410,7 +410,7 @@ export function ReportModal({ open, onClose, userZona }: Props) {
         </div>
 
         {/* Footer */}
-        <div className="px-5 py-4 border-t flex items-center justify-between" style={{ borderColor: "#1e3a5f" }}>
+        <div className="px-5 py-4 border-t flex items-center justify-between" style={{ borderColor: "#0062a8" }}>
           <p className="text-xs" style={{ color: "#475569" }}>
             {selectionLabel}
           </p>
@@ -418,7 +418,7 @@ export function ReportModal({ open, onClose, userZona }: Props) {
             onClick={handleGenerate}
             disabled={!canGenerate || loading}
             className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white transition-all disabled:opacity-40"
-            style={{ backgroundColor: "#1e3a5f" }}
+            style={{ backgroundColor: "#0062a8" }}
           >
             <FileDown size={16} />
             {loading ? "Generando..." : "Descargar PDF"}

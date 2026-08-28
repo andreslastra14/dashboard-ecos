@@ -45,7 +45,7 @@ export function Sidebar({ devices = [], userRole, sondaFija }: { devices?: Devic
       {/* Sidebar — desktop */}
       <aside
         className="hidden lg:flex w-48 shrink-0 flex-col py-3 gap-0.5 border-r"
-        style={{ backgroundColor: "#0a1628", borderColor: "#1e3a5f" }}
+        style={{ backgroundColor: "#04263e", borderColor: "#0062a8" }}
       >
         {nav.map(({ href, label, icon: Icon, disabled }) => {
           if (disabled) {
@@ -67,10 +67,10 @@ export function Sidebar({ devices = [], userRole, sondaFija }: { devices?: Devic
               key={href}
               href={navHref(href)}
               className="flex items-center gap-3 mx-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-all"
-              style={active ? { backgroundColor: "#1e3a5f", color: "#93c5fd" } : { color: "#94a3b8" }}
+              style={active ? { backgroundColor: "#0062a8", color: "#93c5fd" } : { color: "#94a3b8" }}
               onMouseEnter={(e) => {
                 if (!active) {
-                  (e.currentTarget as HTMLElement).style.backgroundColor = "#1e3a5f30";
+                  (e.currentTarget as HTMLElement).style.backgroundColor = "#0062a830";
                   (e.currentTarget as HTMLElement).style.color = "#cbd5e1";
                 }
               }}
@@ -88,11 +88,11 @@ export function Sidebar({ devices = [], userRole, sondaFija }: { devices?: Devic
         })}
 
         {sondaFija && devices.length > 0 && (
-          <div className="mx-3 mt-4 pt-3 border-t" style={{ borderColor: "#1e3a5f" }}>
+          <div className="mx-3 mt-4 pt-3 border-t" style={{ borderColor: "#0062a8" }}>
             <div className="flex items-center gap-1.5 mb-1">
               <Monitor size={14} style={{ color: "#64748b" }} />
               <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "#64748b" }}>
-                Mi Escuela
+                Mi Oficina
               </span>
             </div>
             <p className="text-xs truncate" style={{ color: "#93c5fd" }}>
@@ -101,8 +101,8 @@ export function Sidebar({ devices = [], userRole, sondaFija }: { devices?: Devic
           </div>
         )}
 
-        <div className="mt-auto mx-3 pt-3 border-t" style={{ borderColor: "#1e3a5f" }}>
-          <p className="text-xs" style={{ color: "#64748b" }}>MINED · Red Educativa</p>
+        <div className="mt-auto mx-3 pt-3 border-t" style={{ borderColor: "#0062a8" }}>
+          <p className="text-xs" style={{ color: "#64748b" }}>RapidNet · Red Corporativa</p>
           <p className="text-xs mt-0.5" style={{ color: "#475569" }}>v1.0 — 2025</p>
         </div>
       </aside>
@@ -110,7 +110,7 @@ export function Sidebar({ devices = [], userRole, sondaFija }: { devices?: Devic
       {/* Bottom nav — mobile */}
       <nav
         className="lg:hidden fixed bottom-0 left-0 right-0 z-50 flex border-t"
-        style={{ backgroundColor: "#0a1628", borderColor: "#1e3a5f" }}
+        style={{ backgroundColor: "#04263e", borderColor: "#0062a8" }}
       >
         {nav.map(({ href, label, icon: Icon, disabled }) => {
           if (disabled) {

@@ -40,7 +40,7 @@ export function ReportDownloadButton({
       onClick={handleDownload}
       disabled={!zona || loading}
       className="inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-medium text-white transition-colors disabled:opacity-40"
-      style={{ backgroundColor: "#1e3a5f" }}
+      style={{ backgroundColor: "#0062a8" }}
       title={zona ? `Descargar reporte de ${zona}` : "Seleccione una zona primero"}
     >
       <DocumentDownload size={14} />

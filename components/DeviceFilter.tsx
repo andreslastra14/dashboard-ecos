@@ -16,7 +16,7 @@ export function DeviceFilter({ devices }: { devices: DeviceOption[] }) {
 
   return (
     <div className="flex items-center gap-3 flex-wrap">
-      <div className="flex items-center gap-1.5 text-sm font-medium" style={{ color: "#1e3a5f" }}>
+      <div className="flex items-center gap-1.5 text-sm font-medium" style={{ color: "#0062a8" }}>
         <Screen size={16} />
         Filtrar sonda
       </div>

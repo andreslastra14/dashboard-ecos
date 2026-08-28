@@ -72,7 +72,25 @@ export async function createSession(user: {
   });
 }
 
+// Rama demo-rapidnet: sin contraseña — sesión ficticia de solo lectura.
+const DEMO = process.env.DEMO_MODE !== "0";
+const DEMO_SESSION: SessionPayload = {
+  userId: "demo",
+  email: "demo@rapidnetsv.com",
+  nombre: "Demo RapidNet",
+  role: "operador",
+  zonaAsignada: null,
+  sondaAsignada: null,
+  expiresAt: new Date(8640000000000000),
+};
+
 export async function verifySession(): Promise<SessionPayload | null> {
+  if (DEMO) {
+    // Tocar cookies() mantiene la ruta como dinámica (evita que Next intente
+    // prerenderizar en build las páginas que dependen de la sesión).
+    await cookies();
+    return DEMO_SESSION;
+  }
   const cookieStore = await cookies();
   const session = cookieStore.get("session")?.value;
   if (!session) return null;

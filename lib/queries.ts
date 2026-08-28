@@ -1,6 +1,19 @@
 import { cache } from "react";
 import { query } from "./postgres";
 import type { Dispositivo, Escuela, RegistroHistorico } from "./firebase";
+import {
+  demoDispositivos,
+  demoEscuelas,
+  demoCoordsEscuelas,
+  demoRegistrosRecientes,
+  demoRegistrosDispositivo,
+  demoRegistrosPorRango,
+  demoVelocidadBuckets,
+} from "./demo-data";
+
+// Rama demo-rapidnet: datos fantasma SIEMPRE activos (no toca la BD real).
+// Poner DEMO_MODE=0 en el entorno solo si se quisiera volver a datos reales.
+const DEMO = process.env.DEMO_MODE !== "0";
 
 // Consider a sonda "online" if it reported within the last 5 minutes
 const ONLINE_WINDOW_MS = 5 * 60 * 1000;
@@ -305,6 +318,7 @@ function rowToRegistro(r: MasterRow & { id: number | string }): RegistroHistoric
 }
 
 export async function getRegistrosDispositivo(cpuId: string, limite = 100): Promise<RegistroHistorico[]> {
+  if (DEMO) return demoRegistrosDispositivo(cpuId, limite);
   try {
     const rows = await query<MasterRow & { id: number }>(
       `SELECT id, ${MASTER_COLS}
@@ -331,6 +345,7 @@ export async function getVelocidadBuckets(
   bucketMin = 5,
   sondaIds?: string[],
 ): Promise<{ ts: number; descarga: number; subida: number }[]> {
+  if (DEMO) return demoVelocidadBuckets(horas, sondaId, bucketMin, sondaIds);
   try {
     const bucketSec = bucketMin * 60;
     // Rango relativo al ÚLTIMO dato real (MAX fecha_registro), no al reloj del server:
@@ -390,12 +405,13 @@ async function getRegistrosRecientesImpl(limite = 3000, horas = 12): Promise<Reg
 // dentro del mismo render; sin esto cada llamada repite consultas de ~3s contra
 // la BD y el total pasa el límite de la función en Vercel (el stream se corta
 // y la página queda en blanco bajo el header).
-export const getDispositivos = cache(getDispositivosImpl);
-export const getEscuelas = cache(getEscuelasImpl);
-export const getCoordsEscuelas = cache(getCoordsEscuelasImpl);
-export const getRegistrosRecientes = cache(getRegistrosRecientesImpl);
+export const getDispositivos = cache(DEMO ? demoDispositivos : getDispositivosImpl);
+export const getEscuelas = cache(DEMO ? demoEscuelas : getEscuelasImpl);
+export const getCoordsEscuelas = cache(DEMO ? demoCoordsEscuelas : getCoordsEscuelasImpl);
+export const getRegistrosRecientes = cache(DEMO ? demoRegistrosRecientes : getRegistrosRecientesImpl);
 
 export async function getRegistrosPorRango(desde: Date, hasta: Date): Promise<RegistroHistorico[]> {
+  if (DEMO) return demoRegistrosPorRango(desde, hasta);
   try {
     const rows = await query<MasterRow & { id: number }>(
       `SELECT id, ${MASTER_COLS}

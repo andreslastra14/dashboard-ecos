@@ -35,7 +35,7 @@ export default function RecuperarPage() {
 
   return (
     <div className="w-full max-w-sm mx-4">
-      <div className="rounded-xl border bg-white shadow-lg p-8" style={{ borderColor: "#1e3a5f20" }}>
+      <div className="rounded-xl border bg-white shadow-lg p-8" style={{ borderColor: "#0062a820" }}>
         <h1 className="text-lg font-semibold text-gray-900 mb-1">Recuperar contraseña</h1>
         <p className="text-sm text-gray-500 mb-5">
           Ingresa tu correo y te enviaremos un código de 6 dígitos.
@@ -65,7 +65,7 @@ export default function RecuperarPage() {
             type="submit"
             disabled={pending}
             className="w-full rounded-lg py-2.5 text-sm font-semibold text-white transition-colors disabled:opacity-60"
-            style={{ backgroundColor: "#1e3a5f" }}
+            style={{ backgroundColor: "#0062a8" }}
           >
             {pending ? "Enviando..." : "Enviar código"}
           </button>

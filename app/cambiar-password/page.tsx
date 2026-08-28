@@ -11,10 +11,10 @@ export default async function CambiarPasswordPage() {
   if (!session) redirect("/login");
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: "#0a1628" }}>
+    <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: "#04263e" }}>
       <div className="w-full max-w-sm rounded-2xl bg-white shadow-2xl p-6">
         <div className="flex flex-col items-center text-center mb-5">
-          <Image src="/brand/ecos-icon-128.png" alt="ECOS" width={48} height={48} className="rounded mb-3" />
+          <Image src="/brand/rapidnet-logo-256.png" alt="RapidNet" width={150} height={38} className="rounded object-contain mb-3" />
           <h1 className="text-lg font-bold text-gray-900">Cambia tu contraseña</h1>
           <p className="text-sm text-gray-500 mt-1">
             Por seguridad, define una nueva contraseña para continuar.

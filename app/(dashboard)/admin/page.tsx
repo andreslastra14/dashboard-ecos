@@ -28,21 +28,21 @@ export default async function AdminPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold" style={{ color: "#1e3a5f" }}>Gestión de Usuarios</h1>
+          <h1 className="text-xl font-bold" style={{ color: "#0062a8" }}>Gestión de Usuarios</h1>
           <p className="text-sm text-gray-500">{users.length} usuarios registrados</p>
         </div>
         <div className="flex items-center gap-2">
           <Link
             href="/admin/crear-masivo"
             className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors border"
-            style={{ borderColor: "#1e3a5f", color: "#1e3a5f" }}
+            style={{ borderColor: "#0062a8", color: "#0062a8" }}
           >
             <Group size={16} /> Alta masiva
           </Link>
           <Link
             href="/admin/crear"
             className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white transition-colors"
-            style={{ backgroundColor: "#1e3a5f" }}
+            style={{ backgroundColor: "#0062a8" }}
           >
             <Add size={16} /> Crear Usuario
           </Link>
@@ -71,7 +71,7 @@ export default async function AdminPage() {
                   <td className="px-4 py-2.5">
                     <div className="flex items-center gap-2">
                       {key === "maestro" && <Education size={16} className="text-amber-600" />}
-                      {key === "admin" && <Security size={16} style={{ color: "#1e3a5f" }} />}
+                      {key === "admin" && <Security size={16} style={{ color: "#0062a8" }} />}
                       <div>
                         <p className="font-medium text-gray-900">{role.label}</p>
                         <p className="text-[11px] text-gray-400 leading-tight">{role.description}</p>
@@ -116,8 +116,8 @@ export default async function AdminPage() {
                 <td className="px-4 py-3">
                   <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full"
                     style={{
-                      backgroundColor: u.role === "admin" ? "#1e3a5f15" : u.role === "maestro" ? "#fef3c7" : "#e0f2fe",
-                      color: u.role === "admin" ? "#1e3a5f" : u.role === "maestro" ? "#92400e" : "#0369a1",
+                      backgroundColor: u.role === "admin" ? "#0062a815" : u.role === "maestro" ? "#fef3c7" : "#e0f2fe",
+                      color: u.role === "admin" ? "#0062a8" : u.role === "maestro" ? "#92400e" : "#0369a1",
                     }}
                   >
                     {u.role === "admin" && <Security size={12} />}

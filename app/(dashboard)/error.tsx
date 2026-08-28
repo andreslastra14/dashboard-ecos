@@ -26,7 +26,7 @@ export default function Error({
       <button
         onClick={reset}
         className="px-4 py-2 text-sm font-medium text-white rounded-lg"
-        style={{ backgroundColor: "#1e3a5f" }}
+        style={{ backgroundColor: "#0062a8" }}
       >
         Reintentar
       </button>
